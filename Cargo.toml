@@ -1,0 +1,19 @@
+[package]
+description = "A cli tool for working with PRQL"
+name = "prql"
+edition = "2021"
+version = "0.2.6"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.57"
+chrono = "0.4"
+clap = {version = "3.2.3", features = ["derive"]}
+duckdb = {version = "0.4.0", features = ["bundled", "chrono"]}
+prql-compiler = {version = "0.2.6", path = "../prql-compiler"}
+
+[package.metadata.release]
+shared-version = true
+tag-name = "{{version}}"
+tag-prefix = ""
