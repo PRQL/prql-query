@@ -77,7 +77,6 @@ fn main() -> Result<()> {
     const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
 
     let args = Cli::parse();
-    println!("{:?}", args);
 
     // args.prql
     let mut prql : String; 
@@ -94,8 +93,6 @@ fn main() -> Result<()> {
         prql = format!("from t={}\n", FROM_PLACEHOLDER)+ &prql;
     }
 
-    // print the PRQL query that we generated
-    println!("\nprql:\n{}", prql);
     // compile the PRQL to SQL
     let mut sql = compile(&prql).unwrap();
 
@@ -106,11 +103,9 @@ fn main() -> Result<()> {
         sql = sql.replace(&placeholder, &from_str);
     }
 
+    let file_format : &str;
     let to_str = args.to.to_str().unwrap();
-    if to_str == "-" {
-        println!("\nsql:\n{}", sql);
-    } else {
-        let file_format : &str;
+    if to_str != "-" {
         if to_str.ends_with(".csv") {
             file_format = "(FORMAT 'CSV')";
         } else if to_str.ends_with(".parquet") {
@@ -118,14 +113,20 @@ fn main() -> Result<()> {
         } else {
             file_format = "";
         }
-        println!("{}", to_str);
+        dbg!(&to_str);
         sql = format!("COPY ({}) TO '{}' {}", sql, to_str, file_format);
-        println!("\nsql:\n{}", sql);
+        dbg!(&sql);
     }
 
+    let output : String;
     if args.from.is_some() {
-        let data = query(&sql);
-        println!("{}", data);
+        output = query(&sql);
+    } else {
+        output = sql.to_string();
+    }
+
+    if to_str == "-" {
+        println!("{}", &output);
     }
 
     Ok(())
