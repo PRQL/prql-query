@@ -21,9 +21,13 @@ struct Cli {
     #[clap(short, long, value_parser, default_value = "-")]
     to: PathBuf,
 
+    /// The engine to use to process the query
+    #[clap(short, long, value_parser, default_value = "duckdb")]
+    engine: String,
+
     /// The PRQL query to be processed if given, otherwise stdin
     #[clap(value_parser, default_value = "-")]
-    prql: String
+    prql: String,
 }
 
 fn query(sql: &str) -> String {
