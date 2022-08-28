@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+mod backends;
+
 use anyhow::{Result, anyhow};
 
 use camino::Utf8PathBuf;
@@ -53,7 +55,7 @@ fn main() -> Result<()> {
         let from = args.from.unwrap().to_string();
 
         if args.backend == "duckdb" {
-            output = query_duckdb(&prql, &from, &to)?;
+            output = backends::duckdb::query(&prql, &from, &to)?;
         } else {
             dbg!(&args.backend);
             unimplemented!("{}", &args.backend);
@@ -66,73 +68,4 @@ fn main() -> Result<()> {
 
 
     Ok(())
-}
-
-fn query_duckdb(prql: &str, from: &str, to: &str) -> Result<String> {
-    use duckdb::{Connection, types::{ValueRef, FromSql}};
-    use chrono::{DateTime, Utc};
-
-    // process the PRQL and get the SQL
-    const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
-
-    let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
-
-    // compile the PRQL to SQL
-    let mut sql = compile(&prql)?.replace(&FROM_PLACEHOLDER, &from);
-
-    let file_format : &str;
-    if to != "-" {
-        if to.ends_with(".csv") {
-            file_format = "(FORMAT 'CSV')";
-        } else if to.ends_with(".parquet") {
-            file_format = "(FORMAT 'PARQUET')";
-        } else {
-            file_format = "";
-        }
-        dbg!(&to);
-        sql = format!("COPY ({}) TO '{}' {}", sql, to, file_format);
-        dbg!(&sql);
-    }
-
-    // prepaze te connection and statement
-    let conn = Connection::open_in_memory()?;
-    let mut statement = conn.prepare(&sql)?;
-
-    // determine the number of columns
-    statement.execute([])?;
-    let column_names = statement.column_names();
-    let csv_header = column_names.join(",");
-    let column_count = statement.column_count();
-
-    // query the data
-    let csv_rows = statement
-        .query_map([], |row| {
-            Ok((0..column_count)
-               .map(|i| {
-                   let value = row.get_ref_unwrap(i);
-                   match value {
-                       ValueRef::Null => "".to_string(),
-                       ValueRef::Int(i) => i.to_string(),
-                       ValueRef::TinyInt(i) => i.to_string(),
-                       ValueRef::HugeInt(i) => i.to_string(),
-                       ValueRef::BigInt(i) => i.to_string(),
-                       ValueRef::Float(r) => r.to_string(),
-                       ValueRef::Double(r) => r.to_string(),
-                       ValueRef::Text(t) => String::from_utf8_lossy(t).to_string(),
-                       ValueRef::Timestamp(_, _) => {
-                           let dt = DateTime::<Utc>::column_result(value).unwrap();
-                           dt.format("%Y-%m-%d %H:%M:%S").to_string()
-                       }
-                       t => unimplemented!("{t:?}"),
-                   }
-               })
-               .collect::<Vec<_>>()
-               .join(","))
-        })?
-        .into_iter()
-        .map(|r| r.unwrap())
-        .collect::<Vec<String>>()
-        .join("\n");
-
-        Ok(csv_header + "\n" + &csv_rows)
 }
