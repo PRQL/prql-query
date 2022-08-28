@@ -2,7 +2,7 @@
 
 use anyhow::{Result, anyhow};
 
-use std::path::PathBuf;
+use camino::Utf8PathBuf;
 use std::io::prelude::*;
 use std::io;
 use std::fs;
@@ -15,11 +15,11 @@ use prql_compiler::compile;
 struct Cli {
     /// The file to read data FROM if given
     #[clap(short, long, value_parser)]
-    from: Option<PathBuf>,
+    from: Option<Utf8PathBuf>,
 
     /// The file to write TO if given, otherwise stdout
     #[clap(short, long, value_parser, default_value = "-")]
-    to: PathBuf,
+    to: Utf8PathBuf,
 
     /// The engine to use to process the query
     #[clap(short, long, value_parser, default_value = "duckdb")]
@@ -45,12 +45,12 @@ fn main() -> Result<()> {
         prql = String::from(&args.prql);
     }
 
-    let to = args.to.to_str().ok_or(anyhow!("Couldn't convert PathBuf to str."))?.to_string();
+    let to = args.to.to_string();
 
     if args.from.is_none() {
         output = compile(&prql)?;
     } else {
-        let from = args.from.unwrap().to_str().ok_or(anyhow!("Couldn't convert PathBuf to str."))?.to_string();
+        let from = args.from.unwrap().to_string();
 
         if args.engine == "duckdb" {
             output = query_duckdb(&prql, &from, &to)?;

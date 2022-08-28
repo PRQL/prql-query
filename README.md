@@ -28,7 +28,6 @@ or
 * [x] Add --engine argument
 * [x] Factor out the query function to query(prql, from, to)
 * [ ] Switch to camino
-* [ ] Switch to eyre from anyhow
 * [ ] Add logging and verbosity for debugging
 * [ ] Rename --engine to --backend
 * [ ] Add DataFusion support
@@ -40,3 +39,4 @@ or
 * [ ] Add sqlite support
 * [ ] Add postgresql support
 * [ ] Add mysql support
+* [ ] Switch to eyre from anyhow

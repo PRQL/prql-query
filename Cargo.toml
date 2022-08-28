@@ -8,6 +8,7 @@ version = "0.2.6"
 
 [dependencies]
 anyhow = "1.0.57"
+camino = "1.1.1"
 chrono = "0.4"
 clap = {version = "3.2.3", features = ["derive"]}
 duckdb = {version = "0.4.0", features = ["bundled", "chrono"]}
