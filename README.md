@@ -10,6 +10,9 @@ Coming soon ...
 
 Coming soon ...
 
+    docker build -t prql-tool .
+    alias prql="docker run --rm -it -v $(pwd):/src -u $(id -u):$(id -g) prql-tool"
+
 ### Via Rust toolchain (Cargo)
 
     cargo install prql-tool
