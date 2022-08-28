@@ -1,5 +1,25 @@
 # PRQL CLI Tool
 
+## Installation
+
+### Download a binary from Github Release
+
+Coming soon ...
+
+### Run as a container image (Docker)
+
+Coming soon ...
+
+### Via Rust toolchain (Cargo)
+
+    cargo install prql-tool
+
+or
+
+    git clone https://github.com/snth/prql.git
+    cd prql/prql-tool
+    cargo install --path .
+
 ## TODO
 
 * [x] Add --engine argument
