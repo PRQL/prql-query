@@ -3,7 +3,7 @@
 ## TODO
 
 * [x] Add --engine argument
-* [ ] Factor out the query function to query(prql, from, to)
+* [x] Factor out the query function to query(prql, from, to)
 * [ ] Add DataFusion support
 * [ ] Add DF writer support (csv, parquet, json)
 * [ ] Allow multiple --from options with alias naming

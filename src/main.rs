@@ -30,19 +30,81 @@ struct Cli {
     prql: String,
 }
 
-fn query(sql: &str) -> String {
+fn main() -> Result<()> {
+    let mut output = String::from("");
+
+    let args = Cli::parse();
+
+    // args.prql
+    let mut prql : String; 
+    if args.prql == "-" {
+        prql = String::new();
+        io::stdin().read_to_string(&mut prql);
+    }
+    else {
+        prql = String::from(&args.prql);
+    }
+
+    let to = args.to.to_str().ok_or(anyhow!("Couldn't convert PathBuf to str."))?.to_string();
+
+    if args.from.is_none() {
+        output = compile(&prql)?;
+    } else {
+        let from = args.from.unwrap().to_str().ok_or(anyhow!("Couldn't convert PathBuf to str."))?.to_string();
+
+        if args.engine == "duckdb" {
+            output = query_duckdb(&prql, &from, &to)?;
+        } else {
+            dbg!(&args.engine);
+            unimplemented!("{}", &args.engine);
+        }
+    }
+
+    if to == "-" {
+        println!("{}", output);
+    }
+
+
+    Ok(())
+}
+
+fn query_duckdb(prql: &str, from: &str, to: &str) -> Result<String> {
     use duckdb::{Connection, types::{ValueRef, FromSql}};
     use chrono::{DateTime, Utc};
 
-    let conn = Connection::open_in_memory().unwrap();
-    let mut statement = conn.prepare(sql).unwrap();
+    // process the PRQL and get the SQL
+    const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
+
+    let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
+
+    // compile the PRQL to SQL
+    let mut sql = compile(&prql)?.replace(&FROM_PLACEHOLDER, &from);
+
+    let file_format : &str;
+    if to != "-" {
+        if to.ends_with(".csv") {
+            file_format = "(FORMAT 'CSV')";
+        } else if to.ends_with(".parquet") {
+            file_format = "(FORMAT 'PARQUET')";
+        } else {
+            file_format = "";
+        }
+        dbg!(&to);
+        sql = format!("COPY ({}) TO '{}' {}", sql, to, file_format);
+        dbg!(&sql);
+    }
+
+    // prepaze te connection and statement
+    let conn = Connection::open_in_memory()?;
+    let mut statement = conn.prepare(&sql)?;
 
     // determine the number of columns
-    statement.execute([]).unwrap();
+    statement.execute([])?;
     let column_names = statement.column_names();
     let csv_header = column_names.join(",");
     let column_count = statement.column_count();
 
+    // query the data
     let csv_rows = statement
         .query_map([], |row| {
             Ok((0..column_count)
@@ -66,72 +128,11 @@ fn query(sql: &str) -> String {
                })
                .collect::<Vec<_>>()
                .join(","))
-        })
-        .unwrap()
+        })?
         .into_iter()
         .map(|r| r.unwrap())
         .collect::<Vec<String>>()
         .join("\n");
 
-        csv_header + "\n" + &csv_rows
-}
-
-fn main() -> Result<()> {
-    let mut from : Option<String> = None;
-    const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
-
-    let args = Cli::parse();
-
-    // args.prql
-    let mut prql : String; 
-    if args.prql == "-" {
-        prql = String::new();
-        io::stdin().read_to_string(&mut prql);
-    }
-    else {
-        prql = String::from(&args.prql);
-    }
-
-    // args.from
-    if args.from.is_some() {
-        prql = format!("from t={}\n", FROM_PLACEHOLDER)+ &prql;
-    }
-
-    // compile the PRQL to SQL
-    let mut sql = compile(&prql).unwrap();
-
-    // if we have a from then insert it
-    if let Some(from_path) = args.from.clone() {
-        let placeholder = format!("\"{}\"", FROM_PLACEHOLDER);
-        let from_str = format!("'{}'", from_path.to_str().ok_or(anyhow!("Couldn't convert PathBuf to str."))?);
-        sql = sql.replace(&placeholder, &from_str);
-    }
-
-    let file_format : &str;
-    let to_str = args.to.to_str().unwrap();
-    if to_str != "-" {
-        if to_str.ends_with(".csv") {
-            file_format = "(FORMAT 'CSV')";
-        } else if to_str.ends_with(".parquet") {
-            file_format = "(FORMAT 'PARQUET')";
-        } else {
-            file_format = "";
-        }
-        dbg!(&to_str);
-        sql = format!("COPY ({}) TO '{}' {}", sql, to_str, file_format);
-        dbg!(&sql);
-    }
-
-    let output : String;
-    if args.from.is_some() {
-        output = query(&sql);
-    } else {
-        output = sql.to_string();
-    }
-
-    if to_str == "-" {
-        println!("{}", &output);
-    }
-
-    Ok(())
+        Ok(csv_header + "\n" + &csv_rows)
 }
