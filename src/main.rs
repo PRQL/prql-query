@@ -21,9 +21,9 @@ struct Cli {
     #[clap(short, long, value_parser, default_value = "-")]
     to: Utf8PathBuf,
 
-    /// The engine to use to process the query
+    /// The backend to use to process the query
     #[clap(short, long, value_parser, default_value = "duckdb")]
-    engine: String,
+    backend: String,
 
     /// The PRQL query to be processed if given, otherwise stdin
     #[clap(value_parser, default_value = "-")]
@@ -52,11 +52,11 @@ fn main() -> Result<()> {
     } else {
         let from = args.from.unwrap().to_string();
 
-        if args.engine == "duckdb" {
+        if args.backend == "duckdb" {
             output = query_duckdb(&prql, &from, &to)?;
         } else {
-            dbg!(&args.engine);
-            unimplemented!("{}", &args.engine);
+            dbg!(&args.backend);
+            unimplemented!("{}", &args.backend);
         }
     }
 

@@ -27,11 +27,12 @@ or
 
 * [x] Add --engine argument
 * [x] Factor out the query function to query(prql, from, to)
-* [ ] Switch to camino
-* [ ] Add logging and verbosity for debugging
-* [ ] Rename --engine to --backend
+* [x] Switch to camino
+* [x] Rename --engine to --backend
+* [ ] Add support from .prql files
 * [ ] Add DataFusion support
 * [ ] Add DF writer support (csv, parquet, json)
+* [ ] Add logging and verbosity for debugging
 * [ ] Allow multiple --from options with alias naming
 * [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [ ] Make DuckDB an optional feature
