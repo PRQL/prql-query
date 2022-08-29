@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::{debug, info, warn, error};
 
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
@@ -11,6 +12,7 @@ pub fn query(prql: &str, from: &str, to: &str) -> Result<String> {
     const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
 
     let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
+    info!("prql = {prql:?}");
 
     // compile the PRQL to SQL
     let mut sql = compile(&prql)?.replace(&FROM_PLACEHOLDER, &from);
@@ -24,10 +26,9 @@ pub fn query(prql: &str, from: &str, to: &str) -> Result<String> {
         } else {
             file_format = "";
         }
-        dbg!(&to);
         sql = format!("COPY ({}) TO '{}' {}", sql, to, file_format);
-        dbg!(&sql);
     }
+    info!("sql = {sql:?}");
 
     // prepaze te connection and statement
     let conn = Connection::open_in_memory()?;

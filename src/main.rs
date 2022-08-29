@@ -3,6 +3,7 @@
 mod backends;
 
 use anyhow::{Result, anyhow};
+use log::{debug, info, warn, error};
 
 use camino::Utf8PathBuf;
 use std::io::prelude::*;
@@ -43,9 +44,12 @@ struct Cli {
 }
 
 fn main() -> Result<()> {
+    env_logger::init();
+
     let mut output = String::from("");
 
     let args = Cli::parse();
+    info!("args = {args:?}");
 
     // args.prql
     let mut prql : String; 
@@ -58,6 +62,7 @@ fn main() -> Result<()> {
     else {
         prql = String::from(&args.prql);
     }
+    info!("prql = {prql:?}");
 
     let to = args.to.to_string();
 

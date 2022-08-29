@@ -1,4 +1,5 @@
 use anyhow::Result;
+use log::{debug, info, warn, error};
 
 use datafusion::prelude::*;
 use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
@@ -10,9 +11,11 @@ pub async fn query(prql: &str, from: &str, to: &str) -> Result<String> {
     const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
 
     let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
+    info!("prql = {prql:?}");
 
     // compile the PRQL to SQL
     let sql = compile(&prql)?;
+    info!("sql = {sql:?}");
 
     // Create the context
     let config = SessionConfig::new().with_information_schema(true);
