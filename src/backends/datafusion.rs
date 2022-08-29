@@ -23,7 +23,7 @@ pub async fn query(prql: &str, from: &str, to: &str) -> Result<String> {
     } else if from.ends_with(".parquet") {
         ctx.register_parquet(FROM_PLACEHOLDER, from, ParquetReadOptions::default()).await?;
     } else if from.ends_with(".json") {
-        unimplemented!("{from:?}");
+        ctx.register_json(FROM_PLACEHOLDER, from, NdJsonReadOptions::default()).await?;
     } else {
         unimplemented!("{from:?}");
     }
@@ -34,6 +34,12 @@ pub async fn query(prql: &str, from: &str, to: &str) -> Result<String> {
     // Produce the output
     if to == "-" {
         df.show().await?;
+    } else if to.ends_with(".csv") {
+        df.write_csv(to).await?;
+    } else if to.ends_with(".parquet") {
+        df.write_parquet(to, None).await?;
+    } else if to.ends_with(".json") {
+        df.write_json(to).await?;
     } else {
         unimplemented!("{to:?}");
     }

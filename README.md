@@ -30,8 +30,11 @@ or
 * [x] Switch to camino
 * [x] Rename --engine to --backend
 * [x] Add support from .prql files
-* [ ] Add DataFusion support
-* [ ] Add DF writer support (csv, parquet, json)
+* [x] Add DataFusion support
+* [x] Add DF writer support (csv, parquet, json)
+* [ ] Move single partitioned files to single output file
+* [ ] Add s3 support
+* [ ] Add Delta Lake support
 * [ ] Add logging and verbosity for debugging
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Allow multiple --from options with alias naming
