@@ -11,7 +11,8 @@ Coming soon ...
 Coming soon ...
 
     docker build -t prql-tool .
-    alias prql="docker run --rm -it -v $(pwd):/src -u $(id -u):$(id -g) prql-tool"
+    alias prql="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) prql-tool"
+    prql --help
 
 ### Via Rust toolchain (Cargo)
 
@@ -135,7 +136,7 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add DataFusion support
 * [x] Add DF writer support (csv, parquet, json)
 * [x] Make DuckDB an optional feature
-* [ ] Add logging and verbosity for debugging
+* [x] Add logging and verbosity for debugging
 * [ ] Move single partitioned files to single output file
 * [ ] Add avro support
 * [ ] Add s3 support
