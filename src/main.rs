@@ -42,6 +42,8 @@ fn main() -> Result<()> {
     if args.prql == "-" {
         prql = String::new();
         io::stdin().read_to_string(&mut prql);
+    } else if args.prql.ends_with(".prql") {
+        prql = fs::read_to_string(&args.prql)?;
     }
     else {
         prql = String::from(&args.prql);
