@@ -16,9 +16,8 @@ Coming soon ...
 
 ### Via Rust toolchain (Cargo)
 
-    git clone https://github.com/snth/prql.git
+    git clone -b tool https://github.com/snth/prql.git
     cd prql/prql-tool
-    git checkout tool
     cargo install --path .
 
 ## Usage
