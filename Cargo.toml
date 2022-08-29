@@ -8,11 +8,14 @@ version = "0.2.6"
 
 [dependencies]
 anyhow = "1.0.57"
+async-trait = "0.1"
 camino = "1.1.1"
 chrono = "0.4"
 clap = {version = "3.2.3", features = ["derive"]}
+datafusion = { version = "8.0.0" }
 duckdb = {version = "0.4.0", features = ["bundled", "chrono"]}
 prql-compiler = {version = "0.2.6", path = "../prql-compiler"}
+tokio = "1.19"
 
 [package.metadata.release]
 shared-version = true

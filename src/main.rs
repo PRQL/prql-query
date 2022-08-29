@@ -24,7 +24,7 @@ struct Cli {
     to: Utf8PathBuf,
 
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, default_value = "duckdb")]
+    #[clap(short, long, value_parser, default_value = "datafusion")]
     backend: String,
 
     /// The PRQL query to be processed if given, otherwise stdin
@@ -58,13 +58,23 @@ fn main() -> Result<()> {
 
         if args.backend == "duckdb" {
             output = backends::duckdb::query(&prql, &from, &to)?;
+        } else if args.backend == "datafusion" {
+            // Create a tokio runtime to run async datafusion code
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()?;
+
+            output = match rt.block_on(backends::datafusion::query(&prql, &from, &to)) {
+                Ok(s) => s,
+                Err(e) => return Err(e.into()),
+            }
         } else {
             dbg!(&args.backend);
             unimplemented!("{}", &args.backend);
         }
     }
 
-    if to == "-" {
+    if to == "-" && output != "" {
         println!("{}", output);
     }
 
