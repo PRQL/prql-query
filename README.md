@@ -17,9 +17,12 @@ Coming soon ...
 
     git clone https://github.com/snth/prql.git
     cd prql/prql-tool
+    git checkout tool
     cargo install --path .
 
-### Usage
+## Usage
+
+### Generating SQL
 
 At its simplest `prql` takes PRQL queries and transpiles them to SQL queries:
 
@@ -62,6 +65,22 @@ For convenience, queries ending in ".prql" are assumed to be paths to PRQL query
 
     $ prql examples/queries/invoice_totals.prql
 
+### Querying data from a database
+
+With the functionality described above, you should be able to query your favourite SQL RDBMS using PRQL. For example with the `psql` client for PostgreSQL:
+
+    $ echo 'from my_table | take 5' | prql | psql postgresql://username:password@host:port/database
+
+Or using the `mysql` client for MySQL with a PRQL query stored in a file:
+
+    $ prql my_query.prql | mysql -h myhost -d mydb -u myuser -p mypassword
+
+Similarly for MS SQL Server and other databases.
+
+### Querying data in files
+
+For querying and transforming data stored on the local filesystem, `prql` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
+
 When a `--from` argument is supplied which specifies a data file, the PRQL query will be applied to that data file. An appropriate `from <table>` pipeline step will automatically be inserted and should be ommitted from the query:
 
     $ prql --from examples/data/chinook/csv/invoices.csv "take 5"
@@ -74,6 +93,8 @@ When a `--from` argument is supplied which specifies a data file, the PRQL query
     | 4          | 14          | 2009-01-06T00:00:00.000000000 | 8210 111 ST NW          | Edmonton     | AB            | Canada          | T6G 2C7             | 8.91  |
     | 5          | 23          | 2009-01-11T00:00:00.000000000 | 69 Salem Street         | Boston       | MA            | USA             | 2113                | 13.86 |
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
+
+### Transforming data with `prql` and writing the output to files
 
 When a `--to` argument is supplied, the output will be written there in the appropriate file format instead of stdout (the "" query is equivalent to `select *` and is required because `select *` currently does not work):
 
@@ -113,18 +134,17 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add support from .prql files
 * [x] Add DataFusion support
 * [x] Add DF writer support (csv, parquet, json)
+* [ ] Make DuckDB an optional feature
+* [ ] Add logging and verbosity for debugging
 * [ ] Move single partitioned files to single output file
 * [ ] Add avro support
 * [ ] Add s3 support
 * [ ] Add Delta Lake support
-* [ ] Add logging and verbosity for debugging
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Allow multiple --from options with alias naming
 * [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
-* [ ] Make DuckDB an optional feature
 * [ ] Make --sql an option for SQL query support
 * [ ] Support --schema argument
 * [ ] Add sqlite support
-* [ ] Add postgresql support
-* [ ] Add mysql support
+* [ ] Add sqlx support (Postgresql, MySQL, MS SQL)
 * [ ] Switch to eyre from anyhow
