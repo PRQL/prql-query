@@ -15,10 +15,6 @@ Coming soon ...
 
 ### Via Rust toolchain (Cargo)
 
-    cargo install prql-tool
-
-or
-
     git clone https://github.com/snth/prql.git
     cd prql/prql-tool
     cargo install --path .
@@ -36,6 +32,31 @@ At its simplest `prql` takes PRQL queries and transpiles them to SQL queries:
 Input can also come from stdin:
 
     $ cat examples/queries/invoice_totals.prql | prql
+    SELECT
+      STRFTIME('%Y-%m', i.invoice_date) AS month,
+      STRFTIME('%Y-%m-%d', i.invoice_date) AS day,
+      COUNT(DISTINCT i.invoice_id) AS num_orders,
+      SUM(ii.quantity) AS num_tracks,
+      SUM(ii.unit_price * ii.quantity) AS total_price,
+      SUM(SUM(ii.quantity)) OVER (
+        PARTITION BY STRFTIME('%Y-%m', i.invoice_date)
+        ORDER BY
+          STRFTIME('%Y-%m-%d', i.invoice_date) ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS running_total_num_tracks,
+      LAG(SUM(ii.quantity), 7) OVER (
+        ORDER BY
+          STRFTIME('%Y-%m-%d', i.invoice_date) ROWS BETWEEN UNBOUNDED PRECEDING
+          AND UNBOUNDED FOLLOWING
+      ) AS num_tracks_last_week
+    FROM
+      invoices AS i
+      JOIN invoice_items AS ii USING(invoice_id)
+    GROUP BY
+      STRFTIME('%Y-%m', i.invoice_date),
+      STRFTIME('%Y-%m-%d', i.invoice_date)
+    ORDER BY
+      day
 
 For convenience, queries ending in ".prql" are assumed to be paths to PRQL query files and will be read in so this produces the same as above:
 
@@ -44,6 +65,15 @@ For convenience, queries ending in ".prql" are assumed to be paths to PRQL query
 When a `--from` argument is supplied which specifies a data file, the PRQL query will be applied to that data file. An appropriate `from <table>` pipeline step will automatically be inserted and should be ommitted from the query:
 
     $ prql --from examples/data/chinook/csv/invoices.csv "take 5"
+    +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
+    | invoice_id | customer_id | invoice_date                  | billing_address         | billing_city | billing_state | billing_country | billing_postal_code | total |
+    +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
+    | 1          | 2           | 2009-01-01T00:00:00.000000000 | Theodor-Heuss-Straße 34 | Stuttgart    |               | Germany         | 70174               | 1.98  |
+    | 2          | 4           | 2009-01-02T00:00:00.000000000 | Ullevålsveien 14        | Oslo         |               | Norway          | 0171                | 3.96  |
+    | 3          | 8           | 2009-01-03T00:00:00.000000000 | Grétrystraat 63         | Brussels     |               | Belgium         | 1000                | 5.94  |
+    | 4          | 14          | 2009-01-06T00:00:00.000000000 | 8210 111 ST NW          | Edmonton     | AB            | Canada          | T6G 2C7             | 8.91  |
+    | 5          | 23          | 2009-01-11T00:00:00.000000000 | 69 Salem Street         | Boston       | MA            | USA             | 2113                | 13.86 |
+    +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
 
 When a `--to` argument is supplied, the output will be written there in the appropriate file format instead of stdout (the "" query is equivalent to `select *` and is required because `select *` currently does not work):
 
@@ -51,6 +81,11 @@ When a `--to` argument is supplied, the output will be written there in the appr
 
 Currently csv, parquet and json file formats are supported for both readers and writers:
 
+    $ cat examples/queries/customer_totals.prql
+    group [customer_id] (
+        aggregate [
+            customer_total = sum total,
+        ])
     $ prql -f invoices.parquet -t customer_totals.json examples/queries/customer_totals.prql
     $ prql -f customer_totals.json "sort [-customer_total] | take 10"
     +-------------+--------------------+
@@ -67,7 +102,6 @@ Currently csv, parquet and json file formats are supported for both readers and 
     | 7           | 42.62              |
     | 25          | 42.62              |
     +-------------+--------------------+
-
 
 
 ## TODO
