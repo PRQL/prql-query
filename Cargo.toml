@@ -1,5 +1,5 @@
 [package]
-description = "A cli tool for working with PRQL"
+description = "prql: query and transform data with PRQL"
 name = "prql"
 edition = "2021"
 version = "0.2.6"

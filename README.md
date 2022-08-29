@@ -1,4 +1,4 @@
-# PRQL CLI Tool
+# prql: query and transform data with PRQL
 
 ## Installation
 
