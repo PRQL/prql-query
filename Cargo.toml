@@ -10,12 +10,18 @@ version = "0.2.6"
 anyhow = "1.0.57"
 async-trait = "0.1"
 camino = "1.1.1"
+cfg-if = "1.0.0"
 chrono = "0.4"
-clap = {version = "3.2.3", features = ["derive"]}
-datafusion = { version = "8.0.0" }
-duckdb = {version = "0.4.0", features = ["bundled", "chrono"]}
-prql-compiler = {version = "0.2.6", path = "../prql-compiler"}
+clap = { version = "3.2.3", features = ["derive"] }
+datafusion = { version = "8.0.0", optional = true }
+duckdb = { version = "0.4.0", features = ["bundled", "chrono"], optional = true }
+prql-compiler = { version = "0.2.6", path = "../prql-compiler" }
 tokio = "1.19"
+
+[features]
+default = ["datafusion"]
+datafusion = ["dep:datafusion"]
+duckdb = ["dep:duckdb"]
 
 [package.metadata.release]
 shared-version = true

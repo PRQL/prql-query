@@ -12,6 +12,16 @@ use std::fs;
 use clap::Parser;
 use prql_compiler::compile;
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "datafusion")] {
+        const DEFAULT_BACKEND : &str = "datafusion";
+    } else if #[cfg(feature = "duckdb")] {
+        const DEFAULT_BACKEND : &str = "duckdb";
+    } else {
+        const DEFAULT_BACKEND : &str = "";
+    }
+}
+
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(Parser,Debug)]
 struct Cli {
@@ -24,7 +34,7 @@ struct Cli {
     to: Utf8PathBuf,
 
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, default_value = "datafusion")]
+    #[clap(short, long, value_parser, default_value = DEFAULT_BACKEND)]
     backend: String,
 
     /// The PRQL query to be processed if given, otherwise stdin
@@ -56,9 +66,14 @@ fn main() -> Result<()> {
     } else {
         let from = args.from.unwrap().to_string();
 
+        let mut found_backend = false;
+        #[cfg(feature = "duckdb")]
         if args.backend == "duckdb" {
             output = backends::duckdb::query(&prql, &from, &to)?;
-        } else if args.backend == "datafusion" {
+            found_backend = true;
+        } 
+        #[cfg(feature = "datafusion")]
+        if args.backend == "datafusion" {
             // Create a tokio runtime to run async datafusion code
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
@@ -67,8 +82,10 @@ fn main() -> Result<()> {
             output = match rt.block_on(backends::datafusion::query(&prql, &from, &to)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
-            }
-        } else {
+            };
+            found_backend = true;
+        }
+        if !found_backend {
             dbg!(&args.backend);
             unimplemented!("{}", &args.backend);
         }

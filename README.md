@@ -134,7 +134,7 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add support from .prql files
 * [x] Add DataFusion support
 * [x] Add DF writer support (csv, parquet, json)
-* [ ] Make DuckDB an optional feature
+* [x] Make DuckDB an optional feature
 * [ ] Add logging and verbosity for debugging
 * [ ] Move single partitioned files to single output file
 * [ ] Add avro support
