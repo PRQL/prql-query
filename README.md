@@ -136,13 +136,15 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add DF writer support (csv, parquet, json)
 * [x] Make DuckDB an optional feature
 * [x] Add logging and verbosity for debugging
-* [ ] Move single partitioned files to single output file
-* [ ] Add avro support
-* [ ] Add s3 support
-* [ ] Add Delta Lake support
-* [ ] Use an Enum for the backend checks/enumeration
+* [x] Add --no-exec option
 * [ ] Allow multiple --from options with alias naming
 * [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
+* [ ] Move single partitioned files to single output file
+* [ ] Add abbreviations for keywords
+* [ ] Add s3 support
+* [ ] Add Delta Lake support
+* [ ] Add avro support
+* [ ] Use an Enum for the backend checks/enumeration
 * [ ] Make --sql an option for SQL query support
 * [ ] Support --schema argument
 * [ ] Add sqlite support

@@ -23,7 +23,7 @@ cfg_if::cfg_if! {
     }
 }
 
-/// Search for a pattern in a file and display the lines that contain it.
+/// prql: query and transform data with PRQL
 #[derive(Parser,Debug)]
 struct Cli {
     /// The file to read data FROM if given
@@ -37,6 +37,10 @@ struct Cli {
     /// The backend to use to process the query
     #[clap(short, long, value_parser, default_value = DEFAULT_BACKEND)]
     backend: String,
+
+    /// Only generate SQL without executing it against files
+    #[clap(long, value_parser)]
+    no_exec: bool,
 
     /// The PRQL query to be processed if given, otherwise stdin
     #[clap(value_parser, default_value = "-")]
@@ -66,7 +70,7 @@ fn main() -> Result<()> {
 
     let to = args.to.to_string();
 
-    if args.from.is_none() {
+    if args.from.is_some() || args.no_exec {
         output = compile(&prql)?;
     } else {
         let from = args.from.unwrap().to_string();
