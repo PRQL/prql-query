@@ -81,7 +81,7 @@ Similarly for MS SQL Server and other databases.
 
 For querying and transforming data stored on the local filesystem, `prql` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
 
-When a `--from` argument is supplied which specifies a data file, the PRQL query will be applied to that data file. An appropriate `from <table>` pipeline step will automatically be inserted and should be ommitted from the query:
+When `--from` arguments are supplied which specify data files, the PRQL query will be applied to those files. The files will be referenced in the queries by the names f0, f1, ... in the order they are encountered. For convenience, a `from f0` pipeline step will automatically be inserted at the beginning of the query unless the query already begins with a `from ...` step, so you can write something like the following:
 
     $ prql --from examples/data/chinook/csv/invoices.csv "take 5"
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+

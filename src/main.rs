@@ -7,8 +7,8 @@ use log::{debug, info, warn, error};
 
 use camino::Utf8PathBuf;
 use std::io::prelude::*;
-use std::io;
-use std::fs;
+use std::{io,fs};
+use std::collections::HashMap;
 
 use clap::Parser;
 use prql_compiler::compile;
@@ -23,12 +23,17 @@ cfg_if::cfg_if! {
     }
 }
 
+// Some type aliases for consistency
+type FromType = Vec<Utf8PathBuf>;
+type ToType = Utf8PathBuf;
+const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
+
 /// prql: query and transform data with PRQL
 #[derive(Parser,Debug)]
 struct Cli {
-    /// The file to read data FROM if given
+    /// The file(s) to read data FROM if given
     #[clap(short, long, value_parser)]
-    from: Option<Utf8PathBuf>,
+    from: Vec<Utf8PathBuf>,
 
     /// The file to write TO if given, otherwise stdout
     #[clap(short, long, value_parser, default_value = "-")]
@@ -42,9 +47,19 @@ struct Cli {
     #[clap(long, value_parser)]
     no_exec: bool,
 
-    /// The PRQL query to be processed if given, otherwise stdin
+    /// The PRQL query to be processed if given, otherwise read from stdin
     #[clap(value_parser, default_value = "-")]
     prql: String,
+}
+
+fn process_from(from: FromType) -> HashMap<String,String> {
+    let from : HashMap<String,String> = from
+        .iter()
+        .enumerate()
+        .map(|(k,v)| (format!("f{k}"), v.to_string()))
+        .collect();
+    info!("from={from:?}");
+    from
 }
 
 fn main() -> Result<()> {
@@ -66,19 +81,19 @@ fn main() -> Result<()> {
     else {
         prql = String::from(&args.prql);
     }
+    prql = prql.trim().to_string();
     info!("prql = {prql:?}");
 
-    let to = args.to.to_string();
+    let to = args.to.to_string().trim_end_matches('/').to_string();
 
-    if args.from.is_some() || args.no_exec {
+    if args.from.len()==0 || args.no_exec {
         output = compile(&prql)?;
     } else {
-        let from = args.from.unwrap().to_string();
 
         let mut found_backend = false;
         #[cfg(feature = "duckdb")]
         if args.backend == "duckdb" {
-            output = backends::duckdb::query(&prql, &from, &to)?;
+            output = backends::duckdb::query(&prql, &args.from, &args.to)?;
             found_backend = true;
         } 
         #[cfg(feature = "datafusion")]
@@ -88,15 +103,15 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&prql, &from, &to)) {
+            output = match rt.block_on(backends::datafusion::query(&prql, &args.from, &args.to)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
             };
             found_backend = true;
         }
         if !found_backend {
-            dbg!(&args.backend);
-            unimplemented!("{}", &args.backend);
+            // println!("No backends found! Consider running with the -no-exec flag set.");
+            return Err(anyhow!("No backends found! Consider running with the -no-exec flag set."));
         }
     }
 

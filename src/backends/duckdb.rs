@@ -4,13 +4,12 @@ use log::{debug, info, warn, error};
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
+use crate::{FromType, ToType, FROM_PLACEHOLDER};
 use prql_compiler::compile;
 
-pub fn query(prql: &str, from: &str, to: &str) -> Result<String> {
+pub fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
 
-    // process the PRQL and get the SQL
-    const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
-
+    // pre-process the PRQL
     let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
     info!("prql = {prql:?}");
 
