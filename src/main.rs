@@ -52,14 +52,22 @@ struct Cli {
     prql: String,
 }
 
-fn process_from(from: FromType) -> HashMap<String,String> {
-    let from : HashMap<String,String> = from
-        .iter()
-        .enumerate()
-        .map(|(k,v)| (format!("f{k}"), v.to_string()))
-        .collect();
-    info!("from={from:?}");
-    from
+fn standardise_sources(from: &FromType) -> Result<Vec<(String,String)>> {
+    let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
+    for (i, filepath) in from.iter().enumerate() {
+        let filestr = filepath.to_string();
+        let mut parts : Vec<String> = filestr.split("=").map(|s| s.to_string()).collect();
+        if parts.len()==1 {
+            let components : Vec<&str> = filepath.components().map(|c| c.as_str()).collect();
+            let fileparts : Vec<&str> = components.last().ok_or(anyhow!("There was no last component of: {}", filepath))?.split(".").collect();
+            let newparts = format!("{}={}", fileparts[0], parts[0].to_string()).to_string();
+            parts = newparts.split("=").map(|s| s.to_string()).collect();
+        }
+        sources.push((parts[0].to_string(), parts[1].to_string()));
+    }
+    debug!("from={from:?}");
+    debug!("sources={sources:?}");
+    Ok(sources)
 }
 
 fn main() -> Result<()> {

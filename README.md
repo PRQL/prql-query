@@ -137,7 +137,8 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Make DuckDB an optional feature
 * [x] Add logging and verbosity for debugging
 * [x] Add --no-exec option
-* [ ] Allow multiple --from options with alias naming
+* [x] Allow multiple --from options with alias naming
+* [ ] Cleanup multiple --from code and enable for DuckDB backend as well
 * [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [ ] Move single partitioned files to single output file
 * [ ] Add abbreviations for keywords
