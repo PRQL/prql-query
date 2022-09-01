@@ -81,8 +81,9 @@ Similarly for MS SQL Server and other databases.
 
 For querying and transforming data stored on the local filesystem, `prql` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
 
-When `--from` arguments are supplied which specify data files, the PRQL query will be applied to those files. The files will be referenced in the queries by the names f0, f1, ... in the order they are encountered. For convenience, a `from f0` pipeline step will automatically be inserted at the beginning of the query unless the query already begins with a `from ...` step, so you can write something like the following:
+When `--from` arguments are supplied which specify data files, the PRQL query will be applied to those files. The files can be referenced in the queries by the filenames without the extensions, e.g. customers.csv can be referenced as the table `customers`. For convenience, unless a query already begins with a `from ...` step, a `from <table>` pipeline step will automatically be inserted at the beginning of the query referring to the first from argument encountered, i.e. the following two are equivalent:
 
+    $ prql --from examples/data/chinook/csv/invoices.csv "from invoices|take 5"
     $ prql --from examples/data/chinook/csv/invoices.csv "take 5"
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
     | invoice_id | customer_id | invoice_date                  | billing_address         | billing_city | billing_state | billing_country | billing_postal_code | total |
@@ -93,6 +94,11 @@ When `--from` arguments are supplied which specify data files, the PRQL query wi
     | 4          | 14          | 2009-01-06T00:00:00.000000000 | 8210 111 ST NW          | Edmonton     | AB            | Canada          | T6G 2C7             | 8.91  |
     | 5          | 23          | 2009-01-11T00:00:00.000000000 | 69 Salem Street         | Boston       | MA            | USA             | 2113                | 13.86 |
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
+
+You can also assign an alias for source file with the following form `--from <alias>=<filepath>` and then refer to it by that alias in your queries. So the following is another equivalent form of the queries above:
+
+    $ prql --from i=examples/data/chinook/csv/invoices.csv "from i|take 5"
+
 
 ### Transforming data with `prql` and writing the output to files
 
@@ -138,7 +144,8 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add logging and verbosity for debugging
 * [x] Add --no-exec option
 * [x] Allow multiple --from options with alias naming
-* [ ] Cleanup multiple --from code and enable for DuckDB backend as well
+* [x] Cleanup multiple --from code and enable
+* [ ] Reenable DuckDB backend for multiple sources
 * [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [ ] Move single partitioned files to single output file
 * [ ] Add abbreviations for keywords

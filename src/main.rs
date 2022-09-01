@@ -53,6 +53,7 @@ struct Cli {
 }
 
 fn standardise_sources(from: &FromType) -> Result<Vec<(String,String)>> {
+    debug!("from={from:?}");
     let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
     for (i, filepath) in from.iter().enumerate() {
         let filestr = filepath.to_string();
@@ -65,7 +66,6 @@ fn standardise_sources(from: &FromType) -> Result<Vec<(String,String)>> {
         }
         sources.push((parts[0].to_string(), parts[1].to_string()));
     }
-    debug!("from={from:?}");
     debug!("sources={sources:?}");
     Ok(sources)
 }
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
     let mut output = String::from("");
 
     let args = Cli::parse();
-    info!("args = {args:?}");
+    debug!("args = {args:?}");
 
     // args.prql
     let mut prql : String; 
@@ -90,7 +90,7 @@ fn main() -> Result<()> {
         prql = String::from(&args.prql);
     }
     prql = prql.trim().to_string();
-    info!("prql = {prql:?}");
+    debug!("prql = {prql:?}");
 
     let to = args.to.to_string().trim_end_matches('/').to_string();
 
