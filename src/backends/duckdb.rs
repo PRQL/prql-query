@@ -4,17 +4,36 @@ use log::{debug, info, warn, error};
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{FromType, ToType, FROM_PLACEHOLDER};
+use crate::{FromType, ToType, standardise_sources};
 use prql_compiler::compile;
 
 pub fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
+    let sources = standardise_sources(from)?;
 
     // pre-process the PRQL
-    let prql = format!("from t={}\n{}", &FROM_PLACEHOLDER, &prql);
-    info!("prql = {prql:?}");
+    let mut prql = if ! prql.to_lowercase().starts_with("from") {
+        format!("from {}|{}", sources[0].0, &prql)
+    } else { prql.to_string() };
+    debug!("prql = {prql:?}");
+
+    // prepend CTEs for the source aliases
+    for (i, (alias, filename)) in sources.iter().enumerate() {
+        prql = format!(r#"table {} = (from _f{}_=__file_{}__)
+                          {}"#, &alias, i, i, &prql);
+    }
+    debug!("prql = {prql:?}");
 
     // compile the PRQL to SQL
-    let mut sql = compile(&prql)?.replace(&FROM_PLACEHOLDER, &from);
+    let mut sql : String = compile(&prql)?;
+    debug!("sql = {sql:?}");
+
+    // replace the table placeholders again
+    for (i, (alias, filename)) in sources.iter().enumerate() {
+        let placeholder = format!("__file_{}__", i);
+        let quoted_filename = format!(r#""{}""#, &filename);
+        sql = sql.replace(&placeholder, &quoted_filename);
+    }
+    debug!("sql = {sql:?}");
 
     let file_format : &str;
     if to != "-" {
@@ -27,7 +46,7 @@ pub fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
         }
         sql = format!("COPY ({}) TO '{}' {}", sql, to, file_format);
     }
-    info!("sql = {sql:?}");
+    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // prepaze te connection and statement
     let conn = Connection::open_in_memory()?;

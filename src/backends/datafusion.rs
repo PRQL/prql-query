@@ -9,15 +9,16 @@ use prql_compiler::compile;
 
 pub async fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
     let sources = standardise_sources(from)?;
-    // preprocess the PRQL
+
+    // pre-process the PRQL
     let prql = if ! prql.to_lowercase().starts_with("from") {
         format!("from {}|{}", sources[0].0, &prql)
     } else { prql.to_string() };
-    info!("prql = {prql:?}");
+    debug!("prql = {prql:?}");
 
     // compile the PRQL to SQL
     let sql = compile(&prql)?;
-    info!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
+    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // Create the context
     let config = SessionConfig::new().with_information_schema(true);
