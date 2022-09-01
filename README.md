@@ -99,6 +99,9 @@ You can also assign an alias for source file with the following form `--from <al
 
     $ prql --from i=examples/data/chinook/csv/invoices.csv "from i|take 5"
 
+This works with multiple files which means that the extended example above can be run as follows:
+
+    $ prql -b duckdb -f examples/data/chinook/csv/invoices.csv -f examples/data/chinook/csv/invoice_items.csv examples/queries/invoice_totals.prql
 
 ### Transforming data with `prql` and writing the output to files
 
@@ -151,6 +154,7 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [ ] Add abbreviations for keywords
 * [ ] Add s3 support
 * [ ] Add Delta Lake support
+* [ ] Add formatted table output to DuckDB backend
 * [ ] Add avro support
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Make --sql an option for SQL query support
