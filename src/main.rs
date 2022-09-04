@@ -26,7 +26,7 @@ cfg_if::cfg_if! {
 // Some type aliases for consistency
 type FromType = Vec<Utf8PathBuf>;
 type ToType = Utf8PathBuf;
-const FROM_PLACEHOLDER : &str = "__PRQL_PLACEHOLDER__";
+type SourcesType = Vec<(String,String)>;
 
 /// prql: query and transform data with PRQL
 #[derive(Parser,Debug)]
@@ -74,6 +74,15 @@ fn main() -> Result<()> {
     prql = prql.trim().to_string();
     debug!("prql = {prql:?}");
 
+    // determine the sources
+    let sources = standardise_sources(&args.from)?;
+
+    // insert `from` clause in main pipeline if not given
+    if ! prql.to_lowercase().starts_with("from") && sources.len() > 0 {
+        prql = format!("from {}|{}", sources[0].0, &prql);
+    }
+    debug!("prql = {prql:?}");
+
     let to = args.to.to_string().trim_end_matches('/').to_string();
 
     if args.from.len()==0 || args.no_exec {
@@ -83,7 +92,7 @@ fn main() -> Result<()> {
         let mut found_backend = false;
         #[cfg(feature = "duckdb")]
         if args.backend == "duckdb" {
-            output = backends::duckdb::query(&prql, &args.from, &args.to)?;
+            output = backends::duckdb::query(&prql, &sources, &args.to)?;
             found_backend = true;
         } 
         #[cfg(feature = "datafusion")]
@@ -93,7 +102,7 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&prql, &args.from, &args.to)) {
+            output = match rt.block_on(backends::datafusion::query(&prql, &sources, &args.to)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
             };
@@ -113,9 +122,10 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn standardise_sources(from: &FromType) -> Result<Vec<(String,String)>> {
+fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     debug!("from={from:?}");
-    let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
+    // let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
+    let mut sources : SourcesType = SourcesType::new();
     for filepath in from.iter() {
         let filestr = filepath.as_str();
         let mut parts : Vec<&str> = filestr.split("=").collect();

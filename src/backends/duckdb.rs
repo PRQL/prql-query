@@ -4,32 +4,27 @@ use log::{debug, info, warn, error};
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{FromType, ToType, standardise_sources};
+use crate::{SourcesType, ToType, standardise_sources};
 use prql_compiler::compile;
 
-pub fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
-    let sources = standardise_sources(from)?;
-
-    // pre-process the PRQL
-    let mut prql = if ! prql.to_lowercase().starts_with("from") {
-        format!("from {}|{}", sources[0].0, &prql)
-    } else { prql.to_string() };
-    debug!("prql = {prql:?}");
+pub fn query(prql: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
 
     // prepend CTEs for the source aliases
-    for (i, (alias, filename)) in sources.iter().enumerate() {
-        prql = format!(r#"table {} = (from _f{}_=__file_{}__)
-                          {}"#, &alias, i, i, &prql);
+    let mut prql = prql.to_string();
+    for (alias, filename) in sources.iter() {
+        // Needs the _{}_ on the LHS for _{}_.*
+        prql = format!(r#"table {} = (from __{}__=__file_{}__)
+                          {}"#, &alias, &alias, &alias, &prql);
     }
     debug!("prql = {prql:?}");
 
     // compile the PRQL to SQL
     let mut sql : String = compile(&prql)?;
-    debug!("sql = {sql:?}");
+    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // replace the table placeholders again
-    for (i, (alias, filename)) in sources.iter().enumerate() {
-        let placeholder = format!("__file_{}__", i);
+    for (alias, filename) in sources.iter() {
+        let placeholder = format!("__file_{}__", &alias);
         let quoted_filename = format!(r#""{}""#, &filename);
         sql = sql.replace(&placeholder, &quoted_filename);
     }

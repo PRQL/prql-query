@@ -4,17 +4,10 @@ use log::{debug, info, warn, error};
 use datafusion::prelude::*;
 use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
 
-use crate::{FromType, ToType, standardise_sources};
+use crate::{SourcesType, ToType, standardise_sources};
 use prql_compiler::compile;
 
-pub async fn query(prql: &str, from: &FromType, to: &ToType) -> Result<String> {
-    let sources = standardise_sources(from)?;
-
-    // pre-process the PRQL
-    let prql = if ! prql.to_lowercase().starts_with("from") {
-        format!("from {}|{}", sources[0].0, &prql)
-    } else { prql.to_string() };
-    debug!("prql = {prql:?}");
+pub async fn query(prql: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
 
     // compile the PRQL to SQL
     let sql = compile(&prql)?;
