@@ -32,15 +32,15 @@ type SourcesType = Vec<(String,String)>;
 #[derive(Parser,Debug)]
 struct Cli {
     /// The file(s) to read data FROM if given
-    #[clap(short, long, value_parser)]
+    #[clap(short, long, value_parser, env = "PRQL_FROM")]
     from: Vec<Utf8PathBuf>,
 
     /// The file to write TO if given, otherwise stdout
-    #[clap(short, long, value_parser, default_value = "-")]
+    #[clap(short, long, value_parser, default_value = "-", env = "PRQL_TO")]
     to: Utf8PathBuf,
 
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, default_value = DEFAULT_BACKEND)]
+    #[clap(short, long, value_parser, default_value = DEFAULT_BACKEND, env = "PRQL_BACKEND")]
     backend: String,
 
     /// Only generate SQL without executing it against files
