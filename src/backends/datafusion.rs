@@ -7,10 +7,10 @@ use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
 use crate::{SourcesType, ToType, standardise_sources};
 use prql_compiler::compile;
 
-pub async fn query(prql: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
+pub async fn query(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
 
     // compile the PRQL to SQL
-    let sql = compile(&prql)?;
+    let sql = compile(&query)?;
     debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // Create the context

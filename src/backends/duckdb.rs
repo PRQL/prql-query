@@ -7,19 +7,19 @@ use chrono::{DateTime, Utc};
 use crate::{SourcesType, ToType, standardise_sources};
 use prql_compiler::compile;
 
-pub fn query(prql: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
+pub fn query(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
 
     // prepend CTEs for the source aliases
-    let mut prql = prql.to_string();
+    let mut query = query.to_string();
     for (alias, filename) in sources.iter() {
         // Needs the _{}_ on the LHS for _{}_.*
-        prql = format!(r#"table {} = (from __{}__=__file_{}__)
-                          {}"#, &alias, &alias, &alias, &prql);
+        query = format!(r#"table {} = (from __{}__=__file_{}__)
+                          {}"#, &alias, &alias, &alias, &query);
     }
-    debug!("prql = {prql:?}");
+    debug!("query = {query:?}");
 
     // compile the PRQL to SQL
-    let mut sql : String = compile(&prql)?;
+    let mut sql : String = compile(&query)?;
     debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // replace the table placeholders again

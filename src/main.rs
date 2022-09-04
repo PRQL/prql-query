@@ -48,8 +48,8 @@ struct Cli {
     no_exec: bool,
 
     /// The PRQL query to be processed if given, otherwise read from stdin
-    #[clap(value_parser, default_value = "-")]
-    prql: String,
+    #[clap(value_parser, default_value = "-", env = "PRQL_QUERY")]
+    query: String,
 }
 
 fn main() -> Result<()> {
@@ -60,39 +60,39 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     debug!("args = {args:?}");
 
-    // args.prql
-    let mut prql : String; 
-    if args.prql == "-" {
-        prql = String::new();
-        io::stdin().read_to_string(&mut prql);
-    } else if args.prql.ends_with(".prql") {
-        prql = fs::read_to_string(&args.prql)?;
+    // args.query
+    let mut query : String; 
+    if args.query == "-" {
+        query = String::new();
+        io::stdin().read_to_string(&mut query);
+    } else if args.query.ends_with(".prql") {
+        query = fs::read_to_string(&args.query)?;
     }
     else {
-        prql = String::from(&args.prql);
+        query = String::from(&args.query);
     }
-    prql = prql.trim().to_string();
-    debug!("prql = {prql:?}");
+    query = query.trim().to_string();
+    debug!("query = {query:?}");
 
     // determine the sources
     let sources = standardise_sources(&args.from)?;
 
     // insert `from` clause in main pipeline if not given
-    if ! prql.to_lowercase().starts_with("from") && sources.len() > 0 {
-        prql = format!("from {}|{}", sources.last().unwrap().0, &prql);
+    if ! query.to_lowercase().starts_with("from") && sources.len() > 0 {
+        query = format!("from {}|{}", sources.last().unwrap().0, &query);
     }
-    debug!("prql = {prql:?}");
+    debug!("query = {query:?}");
 
     let to = args.to.to_string().trim_end_matches('/').to_string();
 
     if args.from.len()==0 || args.no_exec {
-        output = compile(&prql)?;
+        output = compile(&query)?;
     } else {
 
         let mut found_backend = false;
         #[cfg(feature = "duckdb")]
         if args.backend == "duckdb" {
-            output = backends::duckdb::query(&prql, &sources, &args.to)?;
+            output = backends::duckdb::query(&query, &sources, &args.to)?;
             found_backend = true;
         } 
         #[cfg(feature = "datafusion")]
@@ -102,7 +102,7 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&prql, &sources, &args.to)) {
+            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
             };
