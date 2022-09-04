@@ -52,7 +52,8 @@ struct Cli {
     query: String,
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     env_logger::init();
     dotenvy::dotenv().ok();
 
@@ -98,15 +99,7 @@ fn main() -> Result<()> {
         } 
         #[cfg(feature = "datafusion")]
         if args.backend == "datafusion" {
-            // Create a tokio runtime to run async datafusion code
-            let rt = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()?;
-
-            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to)) {
-                Ok(s) => s,
-                Err(e) => return Err(e.into()),
-            };
+            output = backends::datafusion::query(&query, &sources, &args.to).await?;
             found_backend = true;
         }
         if !found_backend {
