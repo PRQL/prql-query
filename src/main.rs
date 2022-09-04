@@ -79,7 +79,7 @@ fn main() -> Result<()> {
 
     // insert `from` clause in main pipeline if not given
     if ! prql.to_lowercase().starts_with("from") && sources.len() > 0 {
-        prql = format!("from {}|{}", sources[0].0, &prql);
+        prql = format!("from {}|{}", sources.last().unwrap().0, &prql);
     }
     debug!("prql = {prql:?}");
 
