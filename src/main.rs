@@ -116,14 +116,15 @@ fn main() -> Result<()> {
 fn standardise_sources(from: &FromType) -> Result<Vec<(String,String)>> {
     debug!("from={from:?}");
     let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
-    for (i, filepath) in from.iter().enumerate() {
-        let filestr = filepath.to_string();
-        let mut parts : Vec<String> = filestr.split("=").map(|s| s.to_string()).collect();
+    for filepath in from.iter() {
+        let filestr = filepath.as_str();
+        let mut parts : Vec<&str> = filestr.split("=").collect();
         if parts.len()==1 {
-            let components : Vec<&str> = filepath.components().map(|c| c.as_str()).collect();
-            let fileparts : Vec<&str> = components.last().ok_or(anyhow!("There was no last component of: {}", filepath))?.split(".").collect();
-            let newparts = format!("{}={}", fileparts[0], parts[0].to_string()).to_string();
-            parts = newparts.split("=").map(|s| s.to_string()).collect();
+            let last_component = filepath.components().last()
+                .ok_or(anyhow!("There was no last component of: {}", filepath))?;
+            let filename = last_component.as_str().split(".").next()
+                .ok_or(anyhow!("No filename found in: {}", last_component))?;
+            parts = vec![filename, parts[0]];
         }
         sources.push((parts[0].to_string(), parts[1].to_string()));
     }
