@@ -54,6 +54,7 @@ struct Cli {
 
 fn main() -> Result<()> {
     env_logger::init();
+    dotenvy::dotenv().ok();
 
     let mut output = String::from("");
 
