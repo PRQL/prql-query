@@ -65,9 +65,9 @@ For convenience, queries ending in ".prql" are assumed to be paths to PRQL query
 
     $ prql examples/queries/invoice_totals.prql
 
-### Querying data from a database
+### Querying data from a database (using CLI clients)
 
-With the functionality described above, you should be able to query your favourite SQL RDBMS using PRQL. For example with the `psql` client for PostgreSQL:
+With the functionality described above, you should be able to query your favourite SQL RDBMS using your favourite CLI client and `prql`. For example with the `psql` client for PostgreSQL:
 
     $ echo 'from my_table | take 5' | prql | psql postgresql://username:password@host:port/database
 
@@ -76,6 +76,34 @@ Or using the `mysql` client for MySQL with a PRQL query stored in a file:
     $ prql my_query.prql | mysql -h myhost -d mydb -u myuser -p mypassword
 
 Similarly for MS SQL Server and other databases.
+
+### Querying data from a database (using `prql`)
+
+For convenience, the `prql` tool comes with database connectivity built-in. We use the [`connector-x`](https://github.com/sfu-db/connector-x) Rust library to query your database. Please see the [connector-x documentation](https://sfu-db.github.io/connector-x/databases.html) for details on how to specify the connection strings for each supported database.
+
+Using the previous example, you could query this directly with
+
+    $ prql --database postgresql://username:password@host:port/database 'from my_schema.my_table | take 5'
+
+### Environment Variables
+
+If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `prql` allows you to supply all command line arguments from environment variables with a `PRQL_` prefix. So for example the same query from above could be achieved with:
+
+    $ export PRQL_DATABASE="postgresql://username:password@host:port/database"
+    $ prql 'from my_schema.my_table | take 5'
+
+### .env files
+
+Environment variables can also be read from a `.env` files. Since you probably don't want to expose your database credentials at the shell, it makes sense to put these in a `.env` file. This also allows you to set up directories with configuration for common environments together with common queries for that environment, for example:
+
+    $ mkdir prod
+    $ cd prod
+    $ echo 'PRQL_DATABASE="postgresql://username:password@host:port/database"' > .env
+    $ prql 'from my_schema.my_table | take 5'
+
+Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
+
+    $ for e in prod uat dev; do cd $e && prql ../status_query.prql; done
 
 ### Querying data in files
 
@@ -149,7 +177,11 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Allow multiple --from options with alias naming
 * [x] Cleanup multiple --from code and enable
 * [x] Reenable DuckDB backend for multiple sources
-* [ ] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
+* [x] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
+* [x] Add connectorx support (Postgresql, MySQL)
+* [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
+* [ ] Support globs in --from arguments
+* [ ] Make --sql an option for SQL query support
 * [ ] Move single partitioned files to single output file
 * [ ] Add abbreviations for keywords
 * [ ] Add s3 support
@@ -157,8 +189,5 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [ ] Add formatted table output to DuckDB backend
 * [ ] Add avro support
 * [ ] Use an Enum for the backend checks/enumeration
-* [ ] Make --sql an option for SQL query support
 * [ ] Support --schema argument
-* [ ] Add sqlite support
-* [ ] Add sqlx support (Postgresql, MySQL, MS SQL)
 * [ ] Switch to eyre from anyhow
