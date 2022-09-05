@@ -4,7 +4,7 @@ use log::{debug, info, warn, error};
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{SourcesType, ToType, standardise_sources};
+use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
 pub fn query(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {

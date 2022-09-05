@@ -39,9 +39,13 @@ struct Cli {
     #[clap(short, long, value_parser, default_value = "-", env = "PRQL_TO")]
     to: Utf8PathBuf,
 
+    /// The database to connect to
+    #[clap(short, long, value_parser, env = "PRQL_DATABASE")]
+    database: Option<String>,
+    
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, default_value = DEFAULT_BACKEND, env = "PRQL_BACKEND")]
-    backend: String,
+    #[clap(short, long, value_parser, env = "PRQL_BACKEND")]
+    backend: Option<String>,
 
     /// Only generate SQL without executing it against files
     #[clap(long, value_parser)]
@@ -52,8 +56,7 @@ struct Cli {
     query: String,
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     env_logger::init();
     dotenvy::dotenv().ok();
 
@@ -87,21 +90,57 @@ async fn main() -> Result<()> {
 
     let to = args.to.to_string().trim_end_matches('/').to_string();
 
-    if args.from.len()==0 || args.no_exec {
+    let mut backend : String = String::from("");
+    let mut database : String = String::from("");
+
+    if let Some(args_database) = args.database {
+        backend = if args_database.starts_with("duckdb") {
+            String::from("duckdb")
+        } else {
+            String::from("connectorx")
+        };
+        database = args_database.to_string();
+    } else {
+        backend = String::from(DEFAULT_BACKEND);
+    }
+    debug!("database = {database:?}");
+    //if args.backend.is_some() {
+    if let Some(args_backend) = args.backend {
+        // an explicitly provided backend overrides the one we inferred
+        //backend = &args.backend.ok_or(anyhow!("No database given"))?.to_string();
+        //backend = args_backend.clone();
+        backend = args_backend;
+    }
+    debug!("backend = {backend:?}");
+
+    if args.no_exec || (database=="" && args.from.len()==0)  {
         output = compile(&query)?;
     } else {
-
         let mut found_backend = false;
-        #[cfg(feature = "duckdb")]
-        if args.backend == "duckdb" {
-            output = backends::duckdb::query(&query, &sources, &args.to)?;
+
+        #[cfg(feature = "connectorx")]
+        if backend == "connectorx" {
+            output = backends::connectorx::query(&query, &sources, &database)?;
             found_backend = true;
         } 
         #[cfg(feature = "datafusion")]
-        if args.backend == "datafusion" {
-            output = backends::datafusion::query(&query, &sources, &args.to).await?;
+        if backend == "datafusion" {
+            // Create a tokio runtime to run async datafusion code
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()?;
+
+            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to)) {
+                Ok(s) => s,
+                Err(e) => return Err(e.into()),
+            };
             found_backend = true;
         }
+        #[cfg(feature = "duckdb")]
+        if backend == "duckdb" {
+            output = backends::duckdb::query(&query, &sources, &args.to)?;
+            found_backend = true;
+        } 
         if !found_backend {
             // println!("No backends found! Consider running with the -no-exec flag set.");
             return Err(anyhow!("No backends found! Consider running with the -no-exec flag set."));

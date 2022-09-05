@@ -13,16 +13,24 @@ camino = "1.1.1"
 cfg-if = "1.0.0"
 chrono = "0.4"
 clap = { version = "3.2.3", features = ["derive", "env"] }
+connectorx = { version = "0.2.5", optional = true , features = ["src_postgres", "src_mysql", "dst_arrow2"] }
 datafusion = { version = "8.0.0", optional = true }
 dotenvy = "0.15.3"
 duckdb = { version = "0.4.0", features = ["bundled", "chrono"], optional = true }
 env_logger = "0.9.0"
 log = "0.4.17"
+polars = { version = "0.20" }
+postgres = { version = "0.19", features = ["with-chrono-0_4", "with-uuid-0_8", "with-serde_json-1"], optional = true }
+postgres-native-tls = { version = "0.5", optional = true } 
+postgres-openssl = { version = "0.5", optional = true }
 prql-compiler = { path = "../prql-compiler" }
-tokio = "1.19"
+tokio = { version = "1.19", features = ["rt-multi-thread", "macros"] }
+url = "2"
 
 [features]
-default = ["datafusion"]
+#default = ["datafusion", "connectorx"]
+default = ["connectorx"]
+connectorx = ["dep:connectorx", "dep:postgres", "dep:postgres-native-tls", "dep:postgres-openssl"]
 datafusion = ["dep:datafusion"]
 duckdb = ["dep:duckdb"]
 

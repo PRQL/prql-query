@@ -4,7 +4,7 @@ use log::{debug, info, warn, error};
 use datafusion::prelude::*;
 use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
 
-use crate::{SourcesType, ToType, standardise_sources};
+use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
 pub async fn query(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
