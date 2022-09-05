@@ -27,9 +27,9 @@ pub fn query(query: &str, sources: &SourcesType, database: &str) -> Result<Strin
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
-    for (alias, relation) in sources.iter() {
+    for (alias, source) in sources.iter() {
         // Needs the _{}_ on the LHS for _{}_.*
-        query = format!("table {alias} = (from __{alias}__={relation})\n{query}");
+        query = format!("table {alias} = (from __{alias}__={source})\n{query}");
     }
     debug!("query = {query:?}");
 

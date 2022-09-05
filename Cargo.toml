@@ -8,6 +8,7 @@ version = "0.2.6"
 
 [dependencies]
 anyhow = "1.0.57"
+arrow = "16"
 async-trait = "0.1"
 camino = "1.1.1"
 cfg-if = "1.0.0"

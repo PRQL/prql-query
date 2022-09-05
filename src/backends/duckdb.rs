@@ -3,11 +3,45 @@ use log::{debug, info, warn, error};
 
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
+use arrow::record_batch::RecordBatch;
+use arrow::util::pretty::pretty_format_batches;
 
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
 pub fn query(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
+
+    // prepend CTEs for the source aliases
+    let mut query = query.to_string();
+    for (alias, source) in sources.iter() {
+        // Needs the _{}_ on the LHS for _{}_.*
+        query = format!("table {alias} = (from __{alias}__=__file_{alias}__)\n{query}");
+    }
+    debug!("query = {query:?}");
+
+    // compile the PRQL to SQL
+    let mut sql : String = compile(&query)?;
+    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
+
+    // replace the table placeholders again
+    for (alias, source) in sources.iter() {
+        let placeholder = format!("__file_{}__", &alias);
+        let quoted_source = format!(r#""{}""#, &source);
+        sql = sql.replace(&placeholder, &quoted_source);
+    }
+    debug!("sql = {sql:?}");
+
+    // prepaze te connection and statement
+    let conn = Connection::open_in_memory()?;
+    let mut stmt = conn.prepare(&sql)?;
+
+    let rbs: Vec<RecordBatch> = stmt.query_arrow([])?.collect();
+
+    let output = pretty_format_batches(&rbs)?.to_string();
+    Ok(output)
+}
+
+pub fn query_csv(query: &str, sources: &SourcesType, to: &ToType) -> Result<String> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
