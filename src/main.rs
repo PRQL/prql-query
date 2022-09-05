@@ -5,10 +5,10 @@ mod backends;
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
-use camino::Utf8PathBuf;
+use std::collections::{HashMap, HashSet};
 use std::io::prelude::*;
 use std::{io,fs};
-use std::collections::HashMap;
+use camino::Utf8Path;
 
 use clap::Parser;
 use prql_compiler::compile;
@@ -23,9 +23,11 @@ cfg_if::cfg_if! {
     }
 }
 
+const SUPPORTED_FILE_TYPES : [&str; 4] = ["csv", "parquet", "json", "avro"];
+
 // Some type aliases for consistency
-type FromType = Vec<Utf8PathBuf>;
-type ToType = Utf8PathBuf;
+type FromType = Vec<String>;
+type ToType = String;
 type SourcesType = Vec<(String,String)>;
 
 /// prql: query and transform data with PRQL
@@ -33,11 +35,11 @@ type SourcesType = Vec<(String,String)>;
 struct Cli {
     /// The file(s) to read data FROM if given
     #[clap(short, long, value_parser, env = "PRQL_FROM")]
-    from: Vec<Utf8PathBuf>,
+    from: Vec<String>,
 
     /// The file to write TO if given, otherwise stdout
     #[clap(short, long, value_parser, default_value = "-", env = "PRQL_TO")]
-    to: Utf8PathBuf,
+    to: String,
 
     /// The database to connect to
     #[clap(short, long, value_parser, env = "PRQL_DATABASE")]
@@ -142,7 +144,6 @@ fn main() -> Result<()> {
             found_backend = true;
         } 
         if !found_backend {
-            // println!("No backends found! Consider running with the -no-exec flag set.");
             return Err(anyhow!("No backends found! Consider running with the -no-exec flag set."));
         }
     }
@@ -157,21 +158,33 @@ fn main() -> Result<()> {
 
 fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     debug!("from={from:?}");
+    let supported_file_types : HashSet<&str> = HashSet::from(SUPPORTED_FILE_TYPES);
     // let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
     let mut sources : SourcesType = SourcesType::new();
-    for filepath in from.iter() {
-        let filestr = filepath.as_str();
-        let mut parts : Vec<&str> = filestr.split("=").collect();
+    for fromstr in from.iter() {
+        let mut fromparts : Vec<&str> = fromstr.split("=").collect();
         // FIXME: Should only to the following for files, currently this is getting
         //        it wrong for tablenames of the form schema_name.table_name.
-        if parts.len()==1 {
-            let last_component = filepath.components().last()
-                .ok_or(anyhow!("There was no last component of: {}", filepath))?;
-            let filename = last_component.as_str().split(".").next()
-                .ok_or(anyhow!("No filename found in: {}", last_component))?;
-            parts = vec![filename, parts[0]];
+        if fromparts.len()==1 {
+            let filepath = Utf8Path::new(fromparts[0]);
+            let fileext = filepath.extension()
+                .ok_or(anyhow!("No extension in: {filepath}"))?;
+            if supported_file_types.contains(&fileext) {
+                // Dealing with a file
+                let last_component = filepath.components().last()
+                    .ok_or(anyhow!("There was no last component of: {filepath}"))?;
+                let filename = last_component.as_str().split(".").next()
+                    .ok_or(anyhow!("No filename found in: {last_component}"))?;
+                fromparts = vec![filename, fromparts[0]];
+            } else {
+                // Dealing with a possible tablename with schema prefix
+                let tableparts : Vec<&str> = fromparts[0].split(" ").collect();
+                let tablename = tableparts.last()
+                    .ok_or(anyhow!("No last tablepart"))?;
+                fromparts = vec![tablename, fromparts[0]];
+            }
         }
-        sources.push((parts[0].to_string(), parts[1].to_string()));
+        sources.push((fromparts[0].to_string(), fromparts[1].to_string()));
     }
     debug!("sources={sources:?}");
     Ok(sources)
