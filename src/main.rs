@@ -162,6 +162,8 @@ fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     for filepath in from.iter() {
         let filestr = filepath.as_str();
         let mut parts : Vec<&str> = filestr.split("=").collect();
+        // FIXME: Should only to the following for files, currently this is getting
+        //        it wrong for tablenames of the form schema_name.table_name.
         if parts.len()==1 {
             let last_component = filepath.components().last()
                 .ok_or(anyhow!("There was no last component of: {}", filepath))?;
