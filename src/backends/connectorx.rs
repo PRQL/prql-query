@@ -1,6 +1,10 @@
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
+use arrow::record_batch::RecordBatch;
+use arrow::util::pretty::pretty_format_batches;
+use polars::frame::DataFrame;
+
 use connectorx::{
     prelude::*,
     sources::{
@@ -19,11 +23,11 @@ use connectorx::{
 use url::Url;
 use postgres::NoTls;
 
-use crate::{SourcesType, ToType, standardise_sources};
+use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 use polars::{df, prelude::*};
 
-pub fn query(query: &str, sources: &SourcesType, database: &str) -> Result<String> {
+pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str) -> Result<String> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
@@ -62,7 +66,12 @@ pub fn query(query: &str, sources: &SourcesType, database: &str) -> Result<Strin
         dispatcher.run()?;
     }
 
-    //let data = destination.arrow();
     let df = destination.polars()?;
-    Ok(format!("{:?}", df))
+
+    process_results(df, to)
+}
+
+pub fn process_results(df: DataFrame, to: &ToType) -> Result<String> {
+    let output = format!("{df}");
+    Ok(output)
 }

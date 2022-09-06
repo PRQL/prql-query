@@ -10,6 +10,9 @@ use std::io::prelude::*;
 use std::{io,fs};
 use camino::Utf8Path;
 
+use arrow::record_batch::RecordBatch;
+use arrow::util::pretty::pretty_format_batches;
+
 use clap::Parser;
 use prql_compiler::compile;
 
@@ -29,6 +32,7 @@ const SUPPORTED_FILE_TYPES : [&str; 4] = ["csv", "parquet", "json", "avro"];
 type FromType = Vec<String>;
 type ToType = String;
 type SourcesType = Vec<(String,String)>;
+type QueryResult = Vec<RecordBatch>;
 
 /// prql: query and transform data with PRQL
 #[derive(Parser,Debug)]
@@ -119,12 +123,8 @@ fn main() -> Result<()> {
         output = compile(&query)?;
     } else {
         let mut found_backend = false;
+        let rbs : Vec<RecordBatch>;
 
-        #[cfg(feature = "connectorx")]
-        if backend == "connectorx" {
-            output = backends::connectorx::query(&query, &sources, &database)?;
-            found_backend = true;
-        } 
         #[cfg(feature = "datafusion")]
         if backend == "datafusion" {
             // Create a tokio runtime to run async datafusion code
@@ -132,15 +132,20 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to)) {
+            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to, &database)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
             };
             found_backend = true;
         }
+        #[cfg(feature = "connectorx")]
+        if backend == "connectorx" {
+            output = backends::connectorx::query(&query, &sources, &args.to, &database)?;
+            found_backend = true;
+        } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
-            output = backends::duckdb::query(&query, &sources, &args.to)?;
+            output = backends::duckdb::query(&query, &sources, &args.to, &database)?;
             found_backend = true;
         } 
         if !found_backend {
