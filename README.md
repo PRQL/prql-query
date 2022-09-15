@@ -179,6 +179,7 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Reenable DuckDB backend for multiple sources
 * [x] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [x] Add connectorx support (Postgresql, MySQL)
+* [x] Add formatted table output to DuckDB backend
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
 * [ ] Support globs in --from arguments
 * [ ] Make --sql an option for SQL query support
@@ -186,7 +187,6 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [ ] Add abbreviations for keywords
 * [ ] Add s3 support
 * [ ] Add Delta Lake support
-* [ ] Add formatted table output to DuckDB backend
 * [ ] Add avro support
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Support --schema argument

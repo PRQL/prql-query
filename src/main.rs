@@ -11,7 +11,7 @@ use std::{io,fs};
 use camino::Utf8Path;
 
 use arrow::record_batch::RecordBatch;
-use arrow::util::pretty::pretty_format_batches;
+//use arrow::util::pretty::pretty_format_batches;
 
 use clap::Parser;
 use prql_compiler::compile;
@@ -74,6 +74,10 @@ fn main() -> Result<()> {
     // args.query
     let mut query : String; 
     if args.query == "-" {
+        if atty::is(atty::Stream::Stdin) {
+            println!("Enter QUERY, then press Ctrl-d:");
+            println!();
+        }
         query = String::new();
         io::stdin().read_to_string(&mut query);
     } else if args.query.ends_with(".prql") {
