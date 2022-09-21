@@ -27,7 +27,7 @@ use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 use polars::{df, prelude::*};
 
-pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str) -> Result<String> {
+pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, format: &str) -> Result<String> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();

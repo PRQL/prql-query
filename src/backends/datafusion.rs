@@ -11,7 +11,7 @@ use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
-pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str) -> Result<String> {
+pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, format: &str) -> Result<String> {
 
     // compile the PRQL to SQL
     let sql = compile(&query)?;
@@ -37,26 +37,47 @@ pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &s
     let df = ctx.sql(&sql).await?;
     let rbs = df.collect().await?;
     // process_dataframe(df, to);
-    process_results(rbs, to)
+    process_results(rbs, to, format)
 }
 
-pub fn process_results(rbs: Vec<RecordBatch>, to: &ToType) -> Result<String> {
+pub fn process_results(rbs: Vec<RecordBatch>, to: &ToType, format: &str) -> Result<String> {
 
+    let mut buf = Vec::new();
     let mut output = String::from("");
     let to = &to.to_string();
 
-    if to == "-" {
-        output = pretty_format_batches(&rbs)?.to_string();
+    if to != "-" {
+        return Err(anyhow!("Currently only stdout is implemented."))
     }
-    //} else if to.ends_with(".csv") {
-        //df.write_csv(to).await?;
-    //} else if to.ends_with(".parquet") {
-        //df.write_parquet(to, None).await?;
-    //} else if to.ends_with(".json") {
-        //df.write_json(to).await?;
-    //} else {
-        //unimplemented!("{to:?}");
-    //}
+    if format == "" {
+        output = pretty_format_batches(&rbs)?.to_string();
+    } else if format == "json" {
+        //use datafusion::arrow::json::ArrayWriter;
+        use datafusion::arrow::json::LineDelimitedWriter;
+        let mut writer = LineDelimitedWriter::new(&mut buf);
+        writer.write_batches(&rbs)?;
+        writer.finish()?;
+        output = String::from_utf8(buf)?;
+    } else if format == "csv" {
+        {
+            use datafusion::arrow::csv::Writer;
+            let mut writer = Writer::new(&mut buf);
+            for rb in &rbs {
+                writer.write(&rb)?;
+            }
+        }
+        output = String::from_utf8(buf)?;
+    } else if format == "parquet" {
+        use parquet::arrow::arrow_writer::ArrowWriter;
+        let mut writer = ArrowWriter::try_new(&mut buf, rbs[0].schema(), None)?;
+        for rb in &rbs {
+            writer.write(&rb)?;
+        }
+        writer.close()?;
+        output = String::from_utf8(buf)?;
+    } else {
+        unimplemented!("{to:?}");
+    }
 
     Ok(output)
 }

@@ -5,6 +5,7 @@ mod backends;
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
+use std::fmt::{self, Debug, Display};
 use std::collections::{HashMap, HashSet};
 use std::io::prelude::*;
 use std::{io,fs};
@@ -13,7 +14,7 @@ use camino::Utf8Path;
 use arrow::record_batch::RecordBatch;
 //use arrow::util::pretty::pretty_format_batches;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use prql_compiler::compile;
 
 cfg_if::cfg_if! {
@@ -57,9 +58,29 @@ struct Cli {
     #[clap(long, value_parser)]
     no_exec: bool,
 
+    /// The format to use for the output
+    #[clap(long, arg_enum, value_parser, env = "PRQL_FORMAT")]
+    format: Option<OutputFormat>,
+
     /// The PRQL query to be processed if given, otherwise read from stdin
     #[clap(value_parser, default_value = "-", env = "PRQL_QUERY")]
     query: String,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[allow(non_camel_case_types)]
+enum OutputFormat {
+    csv,
+    json,
+    parquet,
+}
+
+impl fmt::Display for OutputFormat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
 }
 
 fn main() -> Result<()> {
@@ -99,6 +120,22 @@ fn main() -> Result<()> {
     debug!("query = {query:?}");
 
     let to = args.to.to_string().trim_end_matches('/').to_string();
+    debug!("to = {to:?}");
+
+    let mut format = match args.format {
+        Some(f) => f.to_string(),
+        None => String::from(""),
+    };
+    debug!("format = {format:?}");
+
+    if format == "" && to != "-" {
+        format = to.split(".").last().ok_or(anyhow!("No extension format found in {to:?}"))?.to_string();
+        info!("inferred format = {format:?}");
+    } else if to == "-" && vec!["parquet", "avro"].contains(&format.as_str()) {
+        return Err(anyhow!("Cannot print format={format:?} to stdout."));
+    } else if format != "" && to != "-" && !to.ends_with(&format) {
+        return Err(anyhow!("to={to:?} is incompatible with format={format:?}!"));
+    }
 
     let mut backend : String = String::from("");
     let mut database : String = String::from("");
@@ -114,11 +151,9 @@ fn main() -> Result<()> {
         backend = String::from(DEFAULT_BACKEND);
     }
     debug!("database = {database:?}");
-    //if args.backend.is_some() {
+
     if let Some(args_backend) = args.backend {
         // an explicitly provided backend overrides the one we inferred
-        //backend = &args.backend.ok_or(anyhow!("No database given"))?.to_string();
-        //backend = args_backend.clone();
         backend = args_backend;
     }
     debug!("backend = {backend:?}");
@@ -136,7 +171,7 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&query, &sources, &args.to, &database)) {
+            output = match rt.block_on(backends::datafusion::query(&query, &sources, &to, &database, &format)) {
                 Ok(s) => s,
                 Err(e) => return Err(e.into()),
             };
@@ -144,12 +179,12 @@ fn main() -> Result<()> {
         }
         #[cfg(feature = "connectorx")]
         if backend == "connectorx" {
-            output = backends::connectorx::query(&query, &sources, &args.to, &database)?;
+            output = backends::connectorx::query(&query, &sources, &to, &database, &format)?;
             found_backend = true;
         } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
-            output = backends::duckdb::query(&query, &sources, &args.to, &database)?;
+            output = backends::duckdb::query(&query, &sources, &to, &database, &format)?;
             found_backend = true;
         } 
         if !found_backend {
@@ -157,7 +192,8 @@ fn main() -> Result<()> {
         }
     }
 
-    if to == "-" && output != "" {
+    //if to == "-" && output != "" {
+    if output != "" {
         println!("{}", output);
     }
 

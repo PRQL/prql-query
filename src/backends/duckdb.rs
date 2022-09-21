@@ -10,7 +10,7 @@ use chrono::{DateTime, Utc};
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
-pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str) -> Result<String> {
+pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, format: &str) -> Result<String> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
