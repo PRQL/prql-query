@@ -49,7 +49,7 @@ pub fn process_results(rbs: Vec<RecordBatch>, to: &ToType, format: &str) -> Resu
     if to != "-" {
         return Err(anyhow!("Currently only stdout is implemented."))
     }
-    if format == "" {
+    if format == "table" {
         output = pretty_format_batches(&rbs)?.to_string();
     } else if format == "json" {
         //use datafusion::arrow::json::ArrayWriter;

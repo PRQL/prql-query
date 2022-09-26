@@ -27,7 +27,8 @@ cfg_if::cfg_if! {
     }
 }
 
-const SUPPORTED_FILE_TYPES : [&str; 4] = ["csv", "parquet", "json", "avro"];
+const SUPPORTED_FILE_TYPES : [&str; 4] = ["csv", "json", "parquet", "avro"];
+const SUPPORTED_FORMATS : [&str; 4] = ["csv", "json", "parquet", "table"];
 
 // Some type aliases for consistency
 type FromType = Vec<String>;
@@ -73,6 +74,7 @@ enum OutputFormat {
     csv,
     json,
     parquet,
+    table,
 }
 
 impl fmt::Display for OutputFormat {
@@ -128,8 +130,13 @@ fn main() -> Result<()> {
     };
     debug!("format = {format:?}");
 
-    if format == "" && to != "-" {
+    if format == "" && to == "-" {
+        format = String::from("table");
+    } else if format == "" && to != "-" {
         format = to.split(".").last().ok_or(anyhow!("No extension format found in {to:?}"))?.to_string();
+        if !SUPPORTED_FORMATS.contains(&format.as_str()) {
+            return Err(anyhow!(".{format} files are currently not supported."));
+        }
         info!("inferred format = {format:?}");
     } else if to == "-" && vec!["parquet", "avro"].contains(&format.as_str()) {
         return Err(anyhow!("Cannot print format={format:?} to stdout."));
