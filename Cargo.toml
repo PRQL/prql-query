@@ -1,6 +1,6 @@
 [package]
-description = "prql: query and transform data with PRQL"
-name = "prql"
+description = "pq: query and transform data with PRQL"
+name = "pq"
 edition = "2021"
 version = "0.2.6"
 

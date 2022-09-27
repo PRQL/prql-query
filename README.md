@@ -1,4 +1,4 @@
-# prql: query and transform data with PRQL
+# pq: query and transform data with PRQL
 
 ## Installation
 
@@ -10,23 +10,23 @@ Coming soon ...
 
 Coming soon ...
 
-    docker build -t prql-tool .
-    alias prql="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) prql-tool"
-    prql --help
+    docker build -t prql-query .
+    alias pq="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) prql-query"
+    pq --help
 
 ### Via Rust toolchain (Cargo)
 
     git clone -b tool https://github.com/snth/prql.git
-    cd prql/prql-tool
+    cd prql/prql-query
     cargo install --path .
 
 ## Usage
 
 ### Generating SQL
 
-At its simplest `prql` takes PRQL queries and transpiles them to SQL queries:
+At its simplest `pq` takes PRQL queries and transpiles them to SQL queries:
 
-    $ prql "from a | select b"
+    $ pq "from a | select b"
     SELECT
       b
     FROM
@@ -34,7 +34,7 @@ At its simplest `prql` takes PRQL queries and transpiles them to SQL queries:
 
 Input can also come from stdin:
 
-    $ cat examples/queries/invoice_totals.prql | prql
+    $ cat examples/queries/invoice_totals.prql | pq
     SELECT
       STRFTIME('%Y-%m', i.invoice_date) AS month,
       STRFTIME('%Y-%m-%d', i.invoice_date) AS day,
@@ -63,34 +63,34 @@ Input can also come from stdin:
 
 For convenience, queries ending in ".prql" are assumed to be paths to PRQL query files and will be read in so this produces the same as above:
 
-    $ prql examples/queries/invoice_totals.prql
+    $ pq examples/queries/invoice_totals.prql
 
 ### Querying data from a database (using CLI clients)
 
-With the functionality described above, you should be able to query your favourite SQL RDBMS using your favourite CLI client and `prql`. For example with the `psql` client for PostgreSQL:
+With the functionality described above, you should be able to query your favourite SQL RDBMS using your favourite CLI client and `pq`. For example with the `psql` client for PostgreSQL:
 
-    $ echo 'from my_table | take 5' | prql | psql postgresql://username:password@host:port/database
+    $ echo 'from my_table | take 5' | pq | psql postgresql://username:password@host:port/database
 
 Or using the `mysql` client for MySQL with a PRQL query stored in a file:
 
-    $ prql my_query.prql | mysql -h myhost -d mydb -u myuser -p mypassword
+    $ pq my_query.prql | mysql -h myhost -d mydb -u myuser -p mypassword
 
 Similarly for MS SQL Server and other databases.
 
-### Querying data from a database (using `prql`)
+### Querying data from a database (using `pq`)
 
-For convenience, the `prql` tool comes with database connectivity built-in. We use the [`connector-x`](https://github.com/sfu-db/connector-x) Rust library to query your database. Please see the [connector-x documentation](https://sfu-db.github.io/connector-x/databases.html) for details on how to specify the connection strings for each supported database.
+For convenience, the `pq` tool comes with database connectivity built-in. We use the [`connector-x`](https://github.com/sfu-db/connector-x) Rust library to query your database. Please see the [connector-x documentation](https://sfu-db.github.io/connector-x/databases.html) for details on how to specify the connection strings for each supported database.
 
 Using the previous example, you could query this directly with
 
-    $ prql --database postgresql://username:password@host:port/database 'from my_schema.my_table | take 5'
+    $ pq --database postgresql://username:password@host:port/database 'from my_schema.my_table | take 5'
 
 ### Environment Variables
 
-If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `prql` allows you to supply all command line arguments from environment variables with a `PRQL_` prefix. So for example the same query from above could be achieved with:
+If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `pq` allows you to supply all command line arguments from environment variables with a `PQ_` prefix. So for example the same query from above could be achieved with:
 
-    $ export PRQL_DATABASE="postgresql://username:password@host:port/database"
-    $ prql 'from my_schema.my_table | take 5'
+    $ export PQ_DATABASE="postgresql://username:password@host:port/database"
+    $ pq 'from my_schema.my_table | take 5'
 
 ### .env files
 
@@ -98,21 +98,21 @@ Environment variables can also be read from a `.env` files. Since you probably d
 
     $ mkdir prod
     $ cd prod
-    $ echo 'PRQL_DATABASE="postgresql://username:password@host:port/database"' > .env
-    $ prql 'from my_schema.my_table | take 5'
+    $ echo 'PQ_DATABASE="postgresql://username:password@host:port/database"' > .env
+    $ pq 'from my_schema.my_table | take 5'
 
 Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
 
-    $ for e in prod uat dev; do cd $e && prql ../status_query.prql; done
+    $ for e in prod uat dev; do cd $e && pq ../status_query.prql; done
 
 ### Querying data in files
 
-For querying and transforming data stored on the local filesystem, `prql` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
+For querying and transforming data stored on the local filesystem, `pq` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
 
 When `--from` arguments are supplied which specify data files, the PRQL query will be applied to those files. The files can be referenced in the queries by the filenames without the extensions, e.g. customers.csv can be referenced as the table `customers`. For convenience, unless a query already begins with a `from ...` step, a `from <table>` pipeline step will automatically be inserted at the beginning of the query referring to the last `--from` argument encountered, i.e. the following two are equivalent:
 
-    $ prql --from examples/data/chinook/csv/invoices.csv "from invoices|take 5"
-    $ prql --from examples/data/chinook/csv/invoices.csv "take 5"
+    $ pq --from examples/data/chinook/csv/invoices.csv "from invoices|take 5"
+    $ pq --from examples/data/chinook/csv/invoices.csv "take 5"
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
     | invoice_id | customer_id | invoice_date                  | billing_address         | billing_city | billing_state | billing_country | billing_postal_code | total |
     +------------+-------------+-------------------------------+-------------------------+--------------+---------------+-----------------+---------------------+-------+
@@ -125,17 +125,17 @@ When `--from` arguments are supplied which specify data files, the PRQL query wi
 
 You can also assign an alias for source file with the following form `--from <alias>=<filepath>` and then refer to it by that alias in your queries. So the following is another equivalent form of the queries above:
 
-    $ prql --from i=examples/data/chinook/csv/invoices.csv "from i|take 5"
+    $ pq --from i=examples/data/chinook/csv/invoices.csv "from i|take 5"
 
 This works with multiple files which means that the extended example above can be run as follows:
 
-    $ prql -b duckdb -f examples/data/chinook/csv/invoices.csv -f examples/data/chinook/csv/invoice_items.csv examples/queries/invoice_totals.prql
+    $ pq -b duckdb -f examples/data/chinook/csv/invoices.csv -f examples/data/chinook/csv/invoice_items.csv examples/queries/invoice_totals.prql
 
-### Transforming data with `prql` and writing the output to files
+### Transforming data with `pq` and writing the output to files
 
 When a `--to` argument is supplied, the output will be written there in the appropriate file format instead of stdout (the "" query is equivalent to `select *` and is required because `select *` currently does not work):
 
-    $ prql --from examples/data/chinook/csv/invoices.csv --to invoices.parquet ""
+    $ pq --from examples/data/chinook/csv/invoices.csv --to invoices.parquet ""
 
 Currently csv, parquet and json file formats are supported for both readers and writers:
 
@@ -144,8 +144,8 @@ Currently csv, parquet and json file formats are supported for both readers and 
         aggregate [
             customer_total = sum total,
         ])
-    $ prql -f invoices.parquet -t customer_totals.json examples/queries/customer_totals.prql
-    $ prql -f customer_totals.json "sort [-customer_total] | take 10"
+    $ pq -f invoices.parquet -t customer_totals.json examples/queries/customer_totals.prql
+    $ pq -f customer_totals.json "sort [-customer_total] | take 10"
     +-------------+--------------------+
     | customer_id | customer_total     |
     +-------------+--------------------+
@@ -177,7 +177,7 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Allow multiple --from options with alias naming
 * [x] Cleanup multiple --from code and enable
 * [x] Reenable DuckDB backend for multiple sources
-* [x] Add support for environment variables eg PRQL_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
+* [x] Add support for environment variables eg PQ_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [x] Add connectorx support (Postgresql, MySQL)
 * [x] Add formatted table output to DuckDB backend
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)

@@ -73,6 +73,7 @@ pub fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) 
         write_record_batches_to_parquet(rbs, dest)?;
     } else if format == "table" {
         dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
+        dest.write(b"\n");
     } else {
         unimplemented!("to");
     }

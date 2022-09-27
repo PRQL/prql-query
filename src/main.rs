@@ -11,9 +11,6 @@ use std::io::prelude::*;
 use std::{io,fs};
 use camino::Utf8Path;
 
-use arrow::record_batch::RecordBatch;
-//use arrow::util::pretty::pretty_format_batches;
-
 use clap::{Parser, ValueEnum};
 use prql_compiler::compile;
 
@@ -34,25 +31,24 @@ const SUPPORTED_FORMATS : [&str; 4] = ["csv", "json", "parquet", "table"];
 type FromType = Vec<String>;
 type ToType = String;
 type SourcesType = Vec<(String,String)>;
-type QueryResult = Vec<RecordBatch>;
 
-/// prql: query and transform data with PRQL
+/// pq: query and transform data with PRQL
 #[derive(Parser,Debug)]
 struct Cli {
     /// The file(s) to read data FROM if given
-    #[clap(short, long, value_parser, env = "PRQL_FROM")]
+    #[clap(short, long, value_parser, env = "PQ_FROM")]
     from: Vec<String>,
 
     /// The file to write TO if given, otherwise stdout
-    #[clap(short, long, value_parser, default_value = "-", env = "PRQL_TO")]
+    #[clap(short, long, value_parser, default_value = "-", env = "PQ_TO")]
     to: String,
 
     /// The database to connect to
-    #[clap(short, long, value_parser, env = "PRQL_DATABASE")]
+    #[clap(short, long, value_parser, env = "PQ_DATABASE")]
     database: Option<String>,
     
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, env = "PRQL_BACKEND")]
+    #[clap(short, long, value_parser, env = "PQ_BACKEND")]
     backend: Option<String>,
 
     /// Only generate SQL without executing it against files
@@ -60,11 +56,11 @@ struct Cli {
     no_exec: bool,
 
     /// The format to use for the output
-    #[clap(long, arg_enum, value_parser, env = "PRQL_FORMAT")]
+    #[clap(long, arg_enum, value_parser, env = "PQ_FORMAT")]
     format: Option<OutputFormat>,
 
     /// The PRQL query to be processed if given, otherwise read from stdin
-    #[clap(value_parser, default_value = "-", env = "PRQL_QUERY")]
+    #[clap(value_parser, default_value = "-", env = "PQ_QUERY")]
     query: String,
 }
 
@@ -177,7 +173,6 @@ fn main() -> Result<()> {
         output = compile(&query)?;
     } else {
         let mut found_backend = false;
-        let rbs : Vec<RecordBatch>;
 
         #[cfg(feature = "datafusion")]
         if backend == "datafusion" {
