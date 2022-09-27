@@ -138,10 +138,18 @@ fn main() -> Result<()> {
             return Err(anyhow!(".{format} files are currently not supported."));
         }
         info!("inferred format = {format:?}");
-    } else if to == "-" && vec!["parquet", "avro"].contains(&format.as_str()) {
+    } else if to == "-" && atty::is(atty::Stream::Stdout) && vec!["parquet", "avro"].contains(&format.as_str()) {
         return Err(anyhow!("Cannot print format={format:?} to stdout."));
     } else if format != "" && to != "-" && !to.ends_with(&format) {
         return Err(anyhow!("to={to:?} is incompatible with format={format:?}!"));
+    }
+
+    // determine the destination
+    let mut dest: Box<dyn Write>;
+    if to == "-" {
+        dest = Box::new(std::io::stdout());
+    } else {
+        dest = Box::new(std::fs::File::create(&to)?);
     }
 
     let mut backend : String = String::from("");
@@ -178,10 +186,8 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            output = match rt.block_on(backends::datafusion::query(&query, &sources, &to, &database, &format)) {
-                Ok(s) => s,
-                Err(e) => return Err(e.into()),
-            };
+            rt.block_on(backends::datafusion::query(&query, &sources, &mut dest, &database, &format))?;
+            output = String::from("");
             found_backend = true;
         }
         #[cfg(feature = "connectorx")]

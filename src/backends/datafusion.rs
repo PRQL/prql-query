@@ -1,3 +1,5 @@
+use std::io::prelude::*;
+
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
@@ -12,7 +14,7 @@ use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
 
-pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, format: &str) -> Result<String> {
+pub async fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database: &str, format: &str) -> Result<()> {
 
     // compile the PRQL to SQL
     let sql = compile(&query)?;
@@ -25,10 +27,10 @@ pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &s
     for (alias, filename) in sources.iter() {
         if filename.ends_with("csv") {
             ctx.register_csv(alias, filename, CsvReadOptions::new()).await?;
-        } else if filename.ends_with("parquet") {
-            ctx.register_parquet(alias, filename, ParquetReadOptions::default()).await?;
         } else if filename.ends_with("json") {
             ctx.register_json(alias, filename, NdJsonReadOptions::default()).await?;
+        } else if filename.ends_with("parquet") {
+            ctx.register_parquet(alias, filename, ParquetReadOptions::default()).await?;
         } else {
             unimplemented!("filename={filename:?}");
         }
@@ -38,7 +40,7 @@ pub async fn query(query: &str, sources: &SourcesType, to: &ToType, database: &s
     let df = ctx.sql(&sql).await?;
     let rbs = df.collect().await?;
     // process_dataframe(df, to);
-    process_results(rbs, to, format)
+    process_results(&rbs, dest, format)
 }
 
 async fn process_dataframe(df: DataFrame, to: &ToType) -> Result<String> {
@@ -61,67 +63,56 @@ async fn process_dataframe(df: DataFrame, to: &ToType) -> Result<String> {
     Ok("".into())
 }
 
-pub fn process_results(rbs: Vec<RecordBatch>, to: &ToType, format: &str) -> Result<String> {
-
-    let mut output = String::from("");
-    let to = &to.to_string();
-
-    if to != "-" {
-        return Err(anyhow!("Currently only stdout is implemented."))
-    }
+pub fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) -> Result<()> {
 
     if format == "csv" {
-        output = String::from_utf8(convert_record_batches_to_csv(&rbs)?)?;
+        write_record_batches_to_csv(rbs, dest)?;
     } else if format == "json" {
-        output = String::from_utf8(convert_record_batches_to_json(&rbs)?)?;
+        write_record_batches_to_json(rbs, dest)?;
     } else if format == "parquet" {
-        output = String::from_utf8(convert_record_batches_to_parquet(&rbs)?)?;
+        write_record_batches_to_parquet(rbs, dest)?;
     } else if format == "table" {
-        output = pretty_format_batches(&rbs)?.to_string();
+        dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
     } else {
-        unimplemented!("{to:?}");
+        unimplemented!("to");
     }
 
-    Ok(output)
+    Ok(())
 }
 
-pub fn convert_record_batches_to_csv(rbs: &[RecordBatch]) -> Result<Vec<u8>> {
-    let mut buf = Vec::new();
+pub fn write_record_batches_to_csv(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     {
-        let mut writer = csv::Writer::new(&mut buf);
+        let mut writer = csv::Writer::new(dest);
         for rb in rbs {
             writer.write(rb)?;
         }
     }
-    Ok(buf)
+    Ok(())
 }
 
-pub fn convert_record_batches_to_json(rbs: &[RecordBatch]) -> Result<Vec<u8>> {
-    let mut buf = Vec::new();
+pub fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     {
         // let mut writer = json::ArrayWriter::new(&mut buf);
-        let mut writer = json::LineDelimitedWriter::new(&mut buf);
+        let mut writer = json::LineDelimitedWriter::new(dest);
         writer.write_batches(&rbs)?;
         writer.finish()?;
     }
-    Ok(buf)
+    Ok(())
 }
 
-pub fn convert_record_batches_to_parquet(rbs: &[RecordBatch]) -> Result<Vec<u8>> {
-    let mut buf = Vec::new();
-
+pub fn write_record_batches_to_parquet(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     if rbs.is_empty() {
-        return Ok(vec![]);
+        return Ok(());
     }
 
     let schema = rbs[0].schema();
     {
-        let mut writer = parquet::arrow::arrow_writer::ArrowWriter::try_new(&mut buf, schema, None)?;
+        let mut writer = parquet::arrow::arrow_writer::ArrowWriter::try_new(dest, schema, None)?;
 
         for rb in rbs {
             writer.write(rb)?;
         }
         writer.close()?;
     }
-    Ok(buf)
+    Ok(())
 }
