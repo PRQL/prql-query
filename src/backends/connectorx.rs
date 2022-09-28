@@ -1,9 +1,11 @@
+use std::io::prelude::*;
+
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
-use arrow::record_batch::RecordBatch;
-use arrow::util::pretty::pretty_format_batches;
-use polars::frame::DataFrame;
+//use polars::{df, prelude::*};
+//use polars::prelude::{DataFrame, CsvWriter, ParquetWriter};
+use polars::prelude::{CsvWriter, ParquetWriter};
 
 use connectorx::{
     prelude::*,
@@ -25,9 +27,8 @@ use postgres::NoTls;
 
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
-use polars::{df, prelude::*};
 
-pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, format: &str) -> Result<String> {
+pub fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database: &str, format: &str) -> Result<()> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
@@ -68,10 +69,46 @@ pub fn query(query: &str, sources: &SourcesType, to: &ToType, database: &str, fo
 
     let df = destination.polars()?;
 
-    process_results(df, to)
+    process_results(&mut df, dest, format)
 }
 
-pub fn process_results(df: DataFrame, to: &ToType) -> Result<String> {
-    let output = format!("{df}");
-    Ok(output)
+fn process_results(df: &mut DataFrame, dest: &mut dyn Write, format: &str) -> Result<()> {
+
+    if format == "csv" {
+        write_dataframe_to_csv(df, dest)?;
+    } else if format == "json" {
+        write_dataframe_to_json(df, dest)?;
+    } else if format == "parquet" {
+        write_dataframe_to_parquet(df, dest)?;
+    } else if format == "table" {
+        write_dataframe_to_table(df, dest)?;
+    } else {
+        unimplemented!("to");
+    }
+
+    Ok(())
+}
+
+fn write_dataframe_to_csv(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
+    let mut writer = CsvWriter::new(dest);
+    writer.has_header(true)
+        .with_delimiter(b',')
+        .finish(df);
+    Ok(())
+}
+
+fn write_dataframe_to_json(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
+    unimplemented!("write_dataframe_to_json");
+}
+
+fn write_dataframe_to_parquet(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
+    let writer = ParquetWriter::new(dest);
+    writer.finish(df)?;
+    Ok(())
+}
+
+fn write_dataframe_to_table(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
+    dest.write(format!("{df}").as_bytes());
+    dest.write(b"\n");
+    Ok(())
 }
