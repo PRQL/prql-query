@@ -192,7 +192,8 @@ fn main() -> Result<()> {
         } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
-            output = backends::duckdb::query(&query, &sources, &to, &database, &format)?;
+            backends::duckdb::query(&query, &sources, &mut dest, &database, &format)?;
+            output = String::from("");
             found_backend = true;
         } 
         if !found_backend {

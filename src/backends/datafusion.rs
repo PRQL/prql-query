@@ -3,13 +3,15 @@ use std::io::prelude::*;
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
-use datafusion::arrow::{csv, json};
-use datafusion::arrow::record_batch::RecordBatch;
-use datafusion::arrow::util::pretty::pretty_format_batches;
-
 use datafusion::prelude::*;
 use datafusion::dataframe::DataFrame;
 use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
+
+// writer imports
+use datafusion::arrow::{csv, json};
+use datafusion::arrow::record_batch::RecordBatch;
+use datafusion::arrow::util::pretty::pretty_format_batches;
+use datafusion::parquet::arrow::arrow_writer;
 
 use crate::{SourcesType, ToType};
 use prql_compiler::compile;
@@ -63,7 +65,7 @@ async fn process_dataframe(df: DataFrame, to: &ToType) -> Result<String> {
     Ok("".into())
 }
 
-pub fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) -> Result<()> {
+fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) -> Result<()> {
 
     if format == "csv" {
         write_record_batches_to_csv(rbs, dest)?;
@@ -81,7 +83,7 @@ pub fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) 
     Ok(())
 }
 
-pub fn write_record_batches_to_csv(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
+fn write_record_batches_to_csv(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     {
         let mut writer = csv::Writer::new(dest);
         for rb in rbs {
@@ -91,7 +93,7 @@ pub fn write_record_batches_to_csv(rbs: &[RecordBatch], dest: &mut dyn Write) ->
     Ok(())
 }
 
-pub fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
+fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     {
         // let mut writer = json::ArrayWriter::new(&mut buf);
         let mut writer = json::LineDelimitedWriter::new(dest);
@@ -101,14 +103,14 @@ pub fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -
     Ok(())
 }
 
-pub fn write_record_batches_to_parquet(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
+fn write_record_batches_to_parquet(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
     if rbs.is_empty() {
         return Ok(());
     }
 
     let schema = rbs[0].schema();
     {
-        let mut writer = parquet::arrow::arrow_writer::ArrowWriter::try_new(dest, schema, None)?;
+        let mut writer = arrow_writer::ArrowWriter::try_new(dest, schema, None)?;
 
         for rb in rbs {
             writer.write(rb)?;
