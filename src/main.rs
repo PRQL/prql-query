@@ -85,8 +85,6 @@ fn main() -> Result<()> {
     env_logger::init();
     dotenvy::dotenv().ok();
 
-    let mut output = String::from("");
-
     let args = Cli::parse();
     debug!("args = {args:?}");
 
@@ -170,7 +168,8 @@ fn main() -> Result<()> {
     debug!("backend = {backend:?}");
 
     if args.no_exec || (database=="" && args.from.len()==0)  {
-        output = compile(&query)?;
+        let sql = compile(&query)?;
+        println!("{}", sql);
     } else {
         let mut found_backend = false;
 
@@ -182,30 +181,22 @@ fn main() -> Result<()> {
                 .build()?;
 
             rt.block_on(backends::datafusion::query(&query, &sources, &mut dest, &database, &format))?;
-            output = String::from("");
             found_backend = true;
         }
         #[cfg(feature = "connectorx")]
         if backend == "connectorx" {
-            output = backends::connectorx::query(&query, &sources, &to, &database, &format)?;
+            backends::connectorx::query(&query, &sources, &mut dest, &database, &format)?;
             found_backend = true;
         } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
             backends::duckdb::query(&query, &sources, &mut dest, &database, &format)?;
-            output = String::from("");
             found_backend = true;
         } 
         if !found_backend {
             return Err(anyhow!("No backends found! Consider running with the -no-exec flag set."));
         }
     }
-
-    //if to == "-" && output != "" {
-    if output != "" {
-        println!("{}", output);
-    }
-
 
     Ok(())
 }

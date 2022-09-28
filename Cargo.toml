@@ -32,11 +32,11 @@ tokio = { version = "1.19", features = ["rt-multi-thread", "macros"] }
 url = "2"
 
 [features]
-#default = ["datafusion"]
-default = ["datafusion", "duckdb"]
+default = ["datafusion"]
+#default = ["datafusion", "duckdb"]
 #default = ["datafusion", "connectorx"]
 #default = ["datafusion", "connectorx", "duckdb", "polars"]
-connectorx = ["dep:connectorx", "dep:postgres", "dep:postgres-native-tls", "dep:postgres-openssl"]
+connectorx = ["dep:connectorx", "dep:polars", "dep:postgres", "dep:postgres-native-tls", "dep:postgres-openssl"]
 datafusion = ["dep:datafusion"]
 duckdb = ["dep:duckdb", "dep:arrow", "dep:parquet"]
 polars = ["dep:polars"]
