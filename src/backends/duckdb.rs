@@ -11,10 +11,10 @@ use parquet::arrow::arrow_writer;
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{SourcesType, ToType};
+use crate::{SourcesType, OutputWriter, get_dest_from_to};
 use prql_compiler::compile;
 
-pub fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database: &str, format: &str) -> Result<()> {
+pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &str, writer: &OutputWriter) -> Result<()> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
@@ -36,26 +36,34 @@ pub fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database:
     }
     debug!("sql = {sql:?}");
 
-    // prepaze te connection and statement
+    // prepare the connection and statement
     let conn = Connection::open_in_memory()?;
     let mut stmt = conn.prepare(&sql)?;
 
     let rbs = stmt.query_arrow([])?.collect::<Vec<RecordBatch>>();
 
-    process_results(&rbs, dest, format)
+    match writer {
+        OutputWriter::arrow => write_results_with_arrow(&rbs, to, format),
+        OutputWriter::backend => write_results_with_duckdb(&rbs, to, format)
+    }
 }
 
-fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) -> Result<()> {
+fn write_results_with_duckdb(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+    unimplemented!("write_results_with_duckdb");
+}
+
+fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+
+    let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
     if format == "csv" {
-        write_record_batches_to_csv(rbs, dest)?;
+        write_record_batches_to_csv(rbs, &mut dest)?;
     } else if format == "json" {
-        write_record_batches_to_json(rbs, dest)?;
+        write_record_batches_to_json(rbs, &mut dest)?;
     } else if format == "parquet" {
-        write_record_batches_to_parquet(rbs, dest)?;
+        write_record_batches_to_parquet(rbs, &mut dest)?;
     } else if format == "table" {
-        dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
-        dest.write(b"\n");
+        write_record_batches_to_table(rbs, &mut dest)?;
     } else {
         unimplemented!("to");
     }
@@ -97,5 +105,11 @@ fn write_record_batches_to_parquet(rbs: &[RecordBatch], dest: &mut dyn Write) ->
         }
         writer.close()?;
     }
+    Ok(())
+}
+
+fn write_record_batches_to_table(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
+    dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
+    dest.write(b"\n");
     Ok(())
 }

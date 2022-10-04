@@ -29,7 +29,6 @@ const SUPPORTED_FORMATS : [&str; 4] = ["csv", "json", "parquet", "table"];
 
 // Some type aliases for consistency
 type FromType = Vec<String>;
-type ToType = String;
 type SourcesType = Vec<(String,String)>;
 
 /// pq: query and transform data with PRQL
@@ -59,6 +58,10 @@ struct Cli {
     #[clap(long, arg_enum, value_parser, env = "PQ_FORMAT")]
     format: Option<OutputFormat>,
 
+    /// The Writer to use for writing the output
+    #[clap(short, long, arg_enum, value_parser, default_value = "arrow", env = "PQ_WRITER")]
+    writer: OutputWriter,
+
     /// The PRQL query to be processed if given, otherwise read from stdin
     #[clap(value_parser, default_value = "-", env = "PQ_QUERY")]
     query: String,
@@ -66,7 +69,7 @@ struct Cli {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 #[allow(non_camel_case_types)]
-enum OutputFormat {
+pub enum OutputFormat {
     csv,
     json,
     parquet,
@@ -79,6 +82,13 @@ impl fmt::Display for OutputFormat {
         // or, alternatively:
         // fmt::Debug::fmt(self, f)
     }
+}
+
+#[derive(Debug, Copy, Clone, ValueEnum)]
+#[allow(non_camel_case_types)]
+pub enum OutputWriter {
+    arrow,
+    backend
 }
 
 fn main() -> Result<()> {
@@ -118,6 +128,8 @@ fn main() -> Result<()> {
     let to = args.to.to_string().trim_end_matches('/').to_string();
     debug!("to = {to:?}");
 
+    debug!("writer = {0:?}", &args.writer);
+
     let mut format = match args.format {
         Some(f) => f.to_string(),
         None => String::from(""),
@@ -136,14 +148,6 @@ fn main() -> Result<()> {
         return Err(anyhow!("Cannot print format={format:?} to stdout."));
     } else if format != "" && to != "-" && !to.ends_with(&format) {
         return Err(anyhow!("to={to:?} is incompatible with format={format:?}!"));
-    }
-
-    // determine the destination
-    let mut dest: Box<dyn Write>;
-    if to == "-" {
-        dest = Box::new(std::io::stdout());
-    } else {
-        dest = Box::new(std::fs::File::create(&to)?);
     }
 
     let mut backend : String = String::from("");
@@ -180,17 +184,17 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            rt.block_on(backends::datafusion::query(&query, &sources, &mut dest, &database, &format))?;
+            rt.block_on(backends::datafusion::query(&query, &sources, &to, &database, &format, &args.writer))?;
             found_backend = true;
         }
         #[cfg(feature = "connectorx")]
         if backend == "connectorx" {
-            backends::connectorx::query(&query, &sources, &mut dest, &database, &format)?;
+            backends::connectorx::query(&query, &sources, &to, &database, &format, &args.writer)?;
             found_backend = true;
         } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
-            backends::duckdb::query(&query, &sources, &mut dest, &database, &format)?;
+            backends::duckdb::query(&query, &sources, &to, &database, &format, &args.writer)?;
             found_backend = true;
         } 
         if !found_backend {
@@ -200,6 +204,18 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
+    // determine the destination
+    let mut dest: Box<dyn Write>;
+    if to == "-" {
+        dest = Box::new(std::io::stdout());
+    } else {
+        dest = Box::new(std::fs::File::create(&to)?);
+    }
+    Ok(dest)
+}
+
 
 fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     debug!("from={from:?}");

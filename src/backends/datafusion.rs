@@ -13,10 +13,10 @@ use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::arrow::util::pretty::pretty_format_batches;
 use datafusion::parquet::arrow::arrow_writer;
 
-use crate::{SourcesType, ToType};
+use crate::{SourcesType, OutputWriter, get_dest_from_to};
 use prql_compiler::compile;
 
-pub async fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database: &str, format: &str) -> Result<()> {
+pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &str, writer: &OutputWriter) -> Result<()> {
 
     // compile the PRQL to SQL
     let sql = compile(&query)?;
@@ -40,42 +40,41 @@ pub async fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, dat
 
     // Run the query
     let df = ctx.sql(&sql).await?;
-    let rbs = df.collect().await?;
-    // process_dataframe(df, to);
-    process_results(&rbs, dest, format)
+    //let rbs = df.collect().await?;
+
+    match writer {
+        OutputWriter::arrow => write_results_with_arrow(&df.collect().await?, to, format),
+        OutputWriter::backend => write_results_with_datafusion(&df, to, format).await
+    }
 }
 
-async fn process_dataframe(df: DataFrame, to: &ToType) -> Result<String> {
-    // Produce the output
-    // This is the easiest method and works fine for DataFusion but is
-    // not portable to the other formats.
-    let to = &to.to_string();
-    if to == "-" {
-        df.show().await?;
-    } else if to.ends_with(".csv") {
+async fn write_results_with_datafusion(df: &DataFrame, to: &str, format: &str) -> Result<()> {
+    // Write the results using the native datafusion writer
+    if format == "csv" {
         df.write_csv(to).await?;
-    } else if to.ends_with(".parquet") {
-        df.write_parquet(to, None).await?;
-    } else if to.ends_with(".json") {
+    } else if format == "json" {
         df.write_json(to).await?;
-    } else {
-        unimplemented!("{to:?}");
+    } else if format == "parquet" {
+        df.write_parquet(to, None).await?;
+    } else if format == "table" {
+        df.show().await?;
     }
 
-    Ok("".into())
+    Ok(())
 }
 
-fn process_results(rbs: &[RecordBatch], dest: &mut dyn Write, format: &str) -> Result<()> {
+fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+
+    let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
     if format == "csv" {
-        write_record_batches_to_csv(rbs, dest)?;
+        write_record_batches_to_csv(rbs, &mut dest)?;
     } else if format == "json" {
-        write_record_batches_to_json(rbs, dest)?;
+        write_record_batches_to_json(rbs, &mut dest)?;
     } else if format == "parquet" {
-        write_record_batches_to_parquet(rbs, dest)?;
+        write_record_batches_to_parquet(rbs, &mut dest)?;
     } else if format == "table" {
-        dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
-        dest.write(b"\n");
+        write_record_batches_to_table(rbs, &mut dest)?;
     } else {
         unimplemented!("to");
     }
@@ -117,5 +116,11 @@ fn write_record_batches_to_parquet(rbs: &[RecordBatch], dest: &mut dyn Write) ->
         }
         writer.close()?;
     }
+    Ok(())
+}
+
+fn write_record_batches_to_table(rbs: &[RecordBatch], dest: &mut dyn Write) -> Result<()> {
+    dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
+    dest.write(b"\n");
     Ok(())
 }
