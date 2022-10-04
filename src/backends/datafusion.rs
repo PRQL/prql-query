@@ -13,10 +13,10 @@ use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::arrow::util::pretty::pretty_format_batches;
 use datafusion::parquet::arrow::arrow_writer;
 
-use crate::{SourcesType, OutputWriter, get_dest_from_to};
+use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to};
 use prql_compiler::compile;
 
-pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &str, writer: &OutputWriter) -> Result<()> {
+pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
 
     // compile the PRQL to SQL
     let sql = compile(&query)?;
@@ -48,35 +48,27 @@ pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str,
     }
 }
 
-async fn write_results_with_datafusion(df: &DataFrame, to: &str, format: &str) -> Result<()> {
+async fn write_results_with_datafusion(df: &DataFrame, to: &str, format: &OutputFormat) -> Result<()> {
     // Write the results using the native datafusion writer
-    if format == "csv" {
-        df.write_csv(to).await?;
-    } else if format == "json" {
-        df.write_json(to).await?;
-    } else if format == "parquet" {
-        df.write_parquet(to, None).await?;
-    } else if format == "table" {
-        df.show().await?;
+    match format {
+        OutputFormat::csv => df.write_csv(to).await?,
+        OutputFormat::json => df.write_json(to).await?,
+        OutputFormat::parquet => df.write_parquet(to, None).await?,
+        OutputFormat::table => df.show().await?,
     }
 
     Ok(())
 }
 
-fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {
 
     let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
-    if format == "csv" {
-        write_record_batches_to_csv(rbs, &mut dest)?;
-    } else if format == "json" {
-        write_record_batches_to_json(rbs, &mut dest)?;
-    } else if format == "parquet" {
-        write_record_batches_to_parquet(rbs, &mut dest)?;
-    } else if format == "table" {
-        write_record_batches_to_table(rbs, &mut dest)?;
-    } else {
-        unimplemented!("to");
+    match format {
+        OutputFormat::csv => write_record_batches_to_csv(rbs, &mut dest)?,
+        OutputFormat::json => write_record_batches_to_json(rbs, &mut dest)?,
+        OutputFormat::parquet => write_record_batches_to_parquet(rbs, &mut dest)?,
+        OutputFormat::table => write_record_batches_to_table(rbs, &mut dest)?,
     }
 
     Ok(())

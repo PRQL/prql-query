@@ -180,12 +180,12 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add support for environment variables eg PQ_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [x] Add connectorx support (Postgresql, MySQL)
 * [x] Add formatted table output to DuckDB backend
-* [ ] Enable output formats for connectorx
-* [ ] Use an Enum for the output format checks
+* [x] Use an Enum for the output format checks
 * [ ] Use an Enum for the backend checks/enumeration
+* [ ] Make --sql an option for SQL query support
+* [ ] Enable output formats for connectorx
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
 * [ ] Support --schema argument
-* [ ] Make --sql an option for SQL query support
 * [ ] Support globs in --from arguments
 * [ ] Move single partitioned files to single output file
 * [ ] Add abbreviations for keywords

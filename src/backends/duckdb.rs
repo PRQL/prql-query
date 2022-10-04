@@ -11,10 +11,10 @@ use parquet::arrow::arrow_writer;
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{SourcesType, OutputWriter, get_dest_from_to};
+use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to};
 use prql_compiler::compile;
 
-pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &str, writer: &OutputWriter) -> Result<()> {
+pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
@@ -48,24 +48,19 @@ pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, forma
     }
 }
 
-fn write_results_with_duckdb(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+fn write_results_with_duckdb(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {
     unimplemented!("write_results_with_duckdb");
 }
 
-fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &str) -> Result<()> {
+fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {
 
     let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
-    if format == "csv" {
-        write_record_batches_to_csv(rbs, &mut dest)?;
-    } else if format == "json" {
-        write_record_batches_to_json(rbs, &mut dest)?;
-    } else if format == "parquet" {
-        write_record_batches_to_parquet(rbs, &mut dest)?;
-    } else if format == "table" {
-        write_record_batches_to_table(rbs, &mut dest)?;
-    } else {
-        unimplemented!("to");
+    match format {
+        OutputFormat::csv => write_record_batches_to_csv(rbs, &mut dest)?,
+        OutputFormat::json => write_record_batches_to_json(rbs, &mut dest)?,
+        OutputFormat::parquet => write_record_batches_to_parquet(rbs, &mut dest)?,
+        OutputFormat::table => write_record_batches_to_table(rbs, &mut dest)?,
     }
 
     Ok(())

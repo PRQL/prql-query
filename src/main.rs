@@ -128,31 +128,36 @@ fn main() -> Result<()> {
     let to = args.to.to_string().trim_end_matches('/').to_string();
     debug!("to = {to:?}");
 
-    debug!("writer = {0:?}", &args.writer);
-
-    let mut format = match args.format {
-        Some(f) => f.to_string(),
-        None => String::from(""),
-    };
-    debug!("format = {format:?}");
-
-    if format == "" && to == "-" {
-        format = String::from("table");
-    } else if format == "" && to != "-" {
-        format = to.split(".").last().ok_or(anyhow!("No extension format found in {to:?}"))?.to_string();
-        if !SUPPORTED_FORMATS.contains(&format.as_str()) {
-            return Err(anyhow!(".{format} files are currently not supported."));
+    debug!("args.format = {0:?}", &args.format);
+    let format: OutputFormat;
+    if let Some(args_format) = args.format {
+        if to == "-" && atty::is(atty::Stream::Stdout) && vec![OutputFormat::parquet].contains(&args_format) {
+            return Err(anyhow!("Cannot print format={args_format:?} to stdout."));
+        } else if to != "-" && !to.ends_with(&args_format.to_string()) {
+            return Err(anyhow!("to={to:?} is incompatible with format={args_format:?}!"));
+        }
+        format = args_format;
+    } else {
+        // i.e. args.format.is_none()
+        if to == "-" {
+            format = OutputFormat::table;
+        } else {
+            format = match to.split(".").last().ok_or(anyhow!("No extension format found in {to:?}"))? {
+                "csv" => OutputFormat::csv,
+                "json" => OutputFormat::json,
+                "parquet" => OutputFormat::parquet,
+                "table" | "tbl" => OutputFormat::table,
+                fileext => return  Err(anyhow!(".{fileext} files are currently not supported.")),
+            };
         }
         info!("inferred format = {format:?}");
-    } else if to == "-" && atty::is(atty::Stream::Stdout) && vec!["parquet", "avro"].contains(&format.as_str()) {
-        return Err(anyhow!("Cannot print format={format:?} to stdout."));
-    } else if format != "" && to != "-" && !to.ends_with(&format) {
-        return Err(anyhow!("to={to:?} is incompatible with format={format:?}!"));
     }
+    debug!("format = {0:?}", &args.format);
 
     let mut backend : String = String::from("");
     let mut database : String = String::from("");
 
+    debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
         backend = if args_database.starts_with("duckdb") {
             String::from("duckdb")
@@ -165,11 +170,14 @@ fn main() -> Result<()> {
     }
     debug!("database = {database:?}");
 
+    debug!("args.backend = {0:?}", &args.backend);
     if let Some(args_backend) = args.backend {
         // an explicitly provided backend overrides the one we inferred
         backend = args_backend;
     }
     debug!("backend = {backend:?}");
+
+    debug!("args.writer = {0:?}", &args.writer);
 
     if args.no_exec || (database=="" && args.from.len()==0)  {
         let sql = compile(&query)?;
