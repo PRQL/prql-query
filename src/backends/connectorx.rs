@@ -3,9 +3,7 @@ use std::io::prelude::*;
 use anyhow::{Result, anyhow};
 use log::{debug, info, warn, error};
 
-//use polars::{df, prelude::*};
-//use polars::prelude::{DataFrame, CsvWriter, ParquetWriter};
-use polars::prelude::{CsvWriter, ParquetWriter};
+use arrow2::chunk::Chunk;
 
 use connectorx::{
     prelude::*,
@@ -25,10 +23,10 @@ use connectorx::{
 use url::Url;
 use postgres::NoTls;
 
-use crate::{SourcesType, ToType};
+use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to};
 use prql_compiler::compile;
 
-pub fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database: &str, format: &str) -> Result<()> {
+pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
 
     // prepend CTEs for the source aliases
     let mut query = query.to_string();
@@ -67,48 +65,77 @@ pub fn query(query: &str, sources: &SourcesType, dest: &mut dyn Write, database:
         dispatcher.run()?;
     }
 
-    let df = destination.polars()?;
+    let chunks = destination.arrow2()?;
 
-    process_results(&mut df, dest, format)
+    match writer {
+        OutputWriter::arrow => write_results_with_arrow(&chunks, to, format),
+        OutputWriter::backend => write_results_with_connectorx(&chunks, to, format)
+    }
 }
 
-fn process_results(df: &mut DataFrame, dest: &mut dyn Write, format: &str) -> Result<()> {
+fn write_results_with_arrow(chunks: &[Chunk], to: &str, format: &OutputFormat) -> Result<()> {
 
-    if format == "csv" {
-        write_dataframe_to_csv(df, dest)?;
-    } else if format == "json" {
-        write_dataframe_to_json(df, dest)?;
-    } else if format == "parquet" {
-        write_dataframe_to_parquet(df, dest)?;
-    } else if format == "table" {
-        write_dataframe_to_table(df, dest)?;
-    } else {
-        unimplemented!("to");
+    let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
+
+    match format {
+        OutputFormat::csv => write_chunks_to_csv(chunks, &mut dest)?,
+        OutputFormat::json => write_chunks_to_json(chunks, &mut dest)?,
+        OutputFormat::parquet => write_chunks_to_parquet(chunks, &mut dest)?,
+        OutputFormat::table => write_chunks_to_table(chunks, &mut dest)?,
     }
 
     Ok(())
 }
 
-fn write_dataframe_to_csv(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
-    let mut writer = CsvWriter::new(dest);
-    writer.has_header(true)
-        .with_delimiter(b',')
-        .finish(df);
+fn write_chunks_to_csv(chunks: &[Chunk], dest: &mut dyn Write) -> Result<()> {
+    {
+        let mut writer = csv::Writer::new(dest);
+        for rb in rbs {
+            writer.write(rb)?;
+        }
+    }
     Ok(())
 }
 
-fn write_dataframe_to_json(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
-    unimplemented!("write_dataframe_to_json");
-}
-
-fn write_dataframe_to_parquet(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
-    let writer = ParquetWriter::new(dest);
-    writer.finish(df)?;
+fn write_chunks_to_json(chunks: &[Chunk], dest: &mut dyn Write) -> Result<()> {
+    {
+        // let mut writer = json::ArrayWriter::new(&mut buf);
+        let mut writer = json::LineDelimitedWriter::new(dest);
+        writer.write_batches(&rbs)?;
+        writer.finish()?;
+    }
     Ok(())
 }
 
-fn write_dataframe_to_table(df: &mut DataFrame, dest: &mut dyn Write) -> Result<()> {
-    dest.write(format!("{df}").as_bytes());
+fn write_chunks_to_parquet(chunks: &[Chunk], dest: &mut dyn Write) -> Result<()> {
+
+    let options = WriteOptions {
+        write_statistics: true,
+        compression: Compression::Snappy,
+        version: Version::V1,
+    };
+
+    let row_groups = RowGroupIterator::try_new(
+        vec![Ok(chunk)].into_iter(),
+        &schema,
+        options,
+        vec![Encoding::Plain, Encoding::Plain],
+    )?;
+
+    let mut writer = FileWriter::try_new(dest, schema, options)?;
+
+    writer.start()?;
+    for group in row_groups {
+        let (group, len) = group?;
+        writer.write(group, len)?;
+    }
+    let _ = writer.end(None)?;
+
+    Ok(())
+}
+
+fn write_chunks_to_table(chunks: &[Chunk], dest: &mut dyn Write) -> Result<()> {
+    dest.write(pretty_format_batches(rbs)?.to_string().as_bytes());
     dest.write(b"\n");
     Ok(())
 }
