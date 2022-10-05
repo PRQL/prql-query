@@ -13,13 +13,12 @@ use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::arrow::util::pretty::pretty_format_batches;
 use datafusion::parquet::arrow::arrow_writer;
 
-use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to};
-use prql_compiler::compile;
+use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to, get_sql_from_query};
 
 pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
 
     // compile the PRQL to SQL
-    let sql = compile(&query)?;
+    let sql = get_sql_from_query(query)?;
     debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
     // Create the context

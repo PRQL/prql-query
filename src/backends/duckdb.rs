@@ -11,30 +11,37 @@ use parquet::arrow::arrow_writer;
 use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
 
-use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to};
-use prql_compiler::compile;
+use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to, get_sql_from_query};
 
 pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
 
-    // prepend CTEs for the source aliases
     let mut query = query.to_string();
-    for (alias, source) in sources.iter() {
-        // Needs the _{}_ on the LHS for _{}_.*
-        query = format!("table {alias} = (from __{alias}__=__file_{alias}__)\n{query}");
+    if query.starts_with("prql ") {
+        // prepend CTEs for the source aliases
+        let mut lines: Vec<String> = query.split("\n").map(|s| s.to_string()).collect();
+        for (alias, source) in sources.iter() {
+            // Needs the _{}_ on the LHS for _{}_.*
+            lines.insert(1, format!("table {alias} = (from __{alias}__=__file_{alias}__)"));
+        }
+        query = lines.join("\n");
+        debug!("query = {query:?}");
     }
-    debug!("query = {query:?}");
 
     // compile the PRQL to SQL
-    let mut sql : String = compile(&query)?;
+    let mut sql = get_sql_from_query(&query)?;
     debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
 
-    // replace the table placeholders again
-    for (alias, source) in sources.iter() {
-        let placeholder = format!("__file_{}__", &alias);
-        let quoted_source = format!(r#""{}""#, &source);
-        sql = sql.replace(&placeholder, &quoted_source);
+    if query.starts_with("prql ") {
+        // replace the table placeholders again
+        for (alias, source) in sources.iter() {
+            let placeholder = format!("__file_{alias}__");
+            debug!("placeholder = {placeholder:?}");
+            let quoted_source = format!(r#""{source}""#);
+            debug!("quoted_source = {quoted_source:?}");
+            sql = sql.replace(&placeholder, &quoted_source);
+        }
+        debug!("sql = {sql:?}");
     }
-    debug!("sql = {sql:?}");
 
     // prepare the connection and statement
     let conn = Connection::open_in_memory()?;

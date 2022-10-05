@@ -62,6 +62,10 @@ struct Cli {
     #[clap(short, long, arg_enum, value_parser, default_value = "arrow", env = "PQ_WRITER")]
     writer: OutputWriter,
 
+    /// set this to pass a SQL query rather than a PRQL one
+    #[clap(long, value_parser, default_value = "false", env = "PQ_SQL")]
+    sql: bool,
+
     /// The PRQL query to be processed if given, otherwise read from stdin
     #[clap(value_parser, default_value = "-", env = "PQ_QUERY")]
     query: String,
@@ -116,15 +120,26 @@ fn main() -> Result<()> {
     query = query.trim().to_string();
     debug!("query = {query:?}");
 
+    // args.from
     // determine the sources
     let sources = standardise_sources(&args.from)?;
 
-    // insert `from` clause in main pipeline if not given
-    if ! query.to_lowercase().starts_with("from") && sources.len() > 0 {
-        query = format!("from {}|{}", sources.last().unwrap().0, &query);
+    if !args.sql {
+        // insert `from` clause in main pipeline if not given
+        if !query.to_lowercase().contains("from") && sources.len() > 0 {
+            query = format!("from {}|{query}", sources.last().unwrap().0);
+        }
+        debug!("query = {query:?}");
+    }
+
+    // args.sql
+    if !args.sql && !query.starts_with("prql ") {
+        // prepend a PRQL header to signal this is a PRQL query rather than a SQL one
+        query = format!("prql version:1 dialect:ansi\n{query}")
     }
     debug!("query = {query:?}");
 
+    // args.to
     let to = args.to.to_string().trim_end_matches('/').to_string();
     debug!("to = {to:?}");
 
@@ -179,9 +194,9 @@ fn main() -> Result<()> {
 
     debug!("args.writer = {0:?}", &args.writer);
 
-    if args.no_exec || (database=="" && args.from.len()==0)  {
-        let sql = compile(&query)?;
-        println!("{}", sql);
+    if args.no_exec || (database=="" && args.from.len()==0 && !args.sql)  {
+        let sql = get_sql_from_query(&query)?;
+        println!("{}", &sql);
     } else {
         let mut found_backend = false;
 
@@ -224,6 +239,14 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
     Ok(dest)
 }
 
+fn get_sql_from_query(query: &str) -> Result<String> {
+    let sql = if query.starts_with("prql ") {
+        compile(query)?
+    } else {
+        query.to_string()
+    };
+    Ok(sql)
+}
 
 fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     debug!("from={from:?}");
