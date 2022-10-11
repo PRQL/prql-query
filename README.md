@@ -35,6 +35,13 @@ At its simplest `pq` takes PRQL queries and transpiles them to SQL queries:
 Input can also come from stdin:
 
     $ cat examples/queries/invoice_totals.prql | pq
+
+For convenience, queries ending in ".prql" are assumed to be paths to PRQL query files and will be read in so this produces the same as above:
+
+    $ pq examples/queries/invoice_totals.prql
+
+Both of these produce the output:
+
     SELECT
       STRFTIME('%Y-%m', i.invoice_date) AS month,
       STRFTIME('%Y-%m-%d', i.invoice_date) AS day,
@@ -61,10 +68,6 @@ Input can also come from stdin:
     ORDER BY
       day
 
-For convenience, queries ending in ".prql" are assumed to be paths to PRQL query files and will be read in so this produces the same as above:
-
-    $ pq examples/queries/invoice_totals.prql
-
 ### Querying data from a database (using CLI clients)
 
 With the functionality described above, you should be able to query your favourite SQL RDBMS using your favourite CLI client and `pq`. For example with the `psql` client for PostgreSQL:
@@ -76,26 +79,6 @@ Or using the `mysql` client for MySQL with a PRQL query stored in a file:
     $ pq my_query.prql | mysql -h myhost -d mydb -u myuser -p mypassword
 
 Similarly for MS SQL Server and other databases.
-
-### Environment Variables
-
-If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `pq` allows you to supply all command line arguments from environment variables with a `PQ_` prefix. So for example the same query from above could be achieved with:
-
-    $ export PQ_DATABASE="postgresql://username:password@host:port/database"
-    $ pq 'from my_schema.my_table | take 5'
-
-### .env files
-
-Environment variables can also be read from a `.env` files. Since you probably don't want to expose your database credentials at the shell, it makes sense to put these in a `.env` file. This also allows you to set up directories with configuration for common environments together with common queries for that environment, for example:
-
-    $ mkdir prod
-    $ cd prod
-    $ echo 'PQ_DATABASE="postgresql://username:password@host:port/database"' > .env
-    $ pq 'from my_schema.my_table | take 5'
-
-Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
-
-    $ for e in prod uat dev; do cd $e && pq ../status_query.prql; done
 
 ### Querying data in files
 
@@ -153,6 +136,25 @@ Currently csv, parquet and json file formats are supported for both readers and 
     | 25          | 42.62              |
     +-------------+--------------------+
 
+### Environment Variables
+
+If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `pq` allows you to supply all command line arguments from environment variables with a `PQ_` prefix. So for example the same query from above could be achieved with:
+
+    $ export PQ_DATABASE="postgresql://username:password@host:port/database"
+    $ pq 'from my_schema.my_table | take 5'
+
+### .env files
+
+Environment variables can also be read from a `.env` files. Since you probably don't want to expose your database credentials at the shell, it makes sense to put these in a `.env` file. This also allows you to set up directories with configuration for common environments together with common queries for that environment, for example:
+
+    $ mkdir prod
+    $ cd prod
+    $ echo 'PQ_DATABASE="postgresql://username:password@host:port/database"' > .env
+    $ pq 'from my_schema.my_table | take 5'
+
+Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
+
+    $ for e in prod uat dev; do cd $e && pq ../status_query.prql; done
 
 ## TODO
 
@@ -172,8 +174,11 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Add support for environment variables eg PQ_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
 * [x] Add formatted table output to DuckDB backend
 * [x] Use an Enum for the output format checks
+* [x] Make --sql an option for SQL query support
+* [ ] Add Github Actions to build binary artefacts
+* [ ] Add chinook example data
+* [ ] Add tests
 * [ ] Use an Enum for the backend checks/enumeration
-* [ ] Make --sql an option for SQL query support
 * [ ] Add connectorx support (Postgresql, MySQL)
 * [ ] Enable output formats for connectorx
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
