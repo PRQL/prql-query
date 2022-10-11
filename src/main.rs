@@ -25,7 +25,6 @@ cfg_if::cfg_if! {
 }
 
 const SUPPORTED_FILE_TYPES: [&str; 4] = ["csv", "json", "parquet", "avro"];
-const SUPPORTED_FORMATS: [&str; 4] = ["csv", "json", "parquet", "table"];
 
 // Some type aliases for consistency
 type FromType = Vec<String>;
@@ -118,6 +117,7 @@ fn main() -> Result<()> {
         }
         query = String::new();
         io::stdin().read_to_string(&mut query);
+        println!("---");
     } else if args.query.ends_with(".prql") {
         query = fs::read_to_string(&args.query)?;
     } else {
@@ -190,6 +190,9 @@ fn main() -> Result<()> {
     debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
         backend = if args_database.starts_with("duckdb") {
+            String::from("duckdb")
+        } else {
+            // FIXME: Replace this with connectorx when implemented
             String::from("duckdb")
         };
         database = args_database.to_string();
