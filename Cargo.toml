@@ -9,12 +9,14 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.57"
 arrow = { version = "23", optional = true, features = ["default", "ipc_compression", "prettyprint"]}
+arrow2 = { version = "0.10", optional = true, features = ["crc", "io_csv", "io_json", "io_ipc", "io_print", "io_parquet", "io_avro"]}
 async-trait = "0.1"
 atty = "0.2"
 camino = "1.1.1"
 cfg-if = "1.0.0"
 chrono = "0.4"
 clap = { version = "3.2.3", features = ["derive", "env"] }
+connectorx = { version = "0.2.5", optional = true , features = ["src_postgres", "src_mysql", "dst_arrow2"] }
 datafusion = { version = "12.0.0", optional = true , features = ["default", "avro"]}
 dotenvy = "0.15.3"
 duckdb = { version = "0.5.1", features = ["bundled", "modern-full"], optional = true }
@@ -22,6 +24,9 @@ env_logger = "0.9.0"
 log = "0.4.17"
 parquet = { version = "23" , optional = true}
 polars = { version = "0.24.2", optional = true, features = ["docs-selection"] }
+postgres = { version = "0.19", features = ["with-chrono-0_4", "with-uuid-0_8", "with-serde_json-1"], optional = true }
+postgres-native-tls = { version = "0.5", optional = true } 
+postgres-openssl = { version = "0.5", optional = true }
 prql-compiler = { version = "0.2.8" }
 tokio = { version = "1.19", features = ["rt-multi-thread", "macros"] }
 url = "2"
@@ -29,6 +34,9 @@ url = "2"
 [features]
 #default = ["datafusion"]
 default = ["datafusion", "duckdb"]
+#default = ["datafusion", "connectorx"]
+#default = ["datafusion", "connectorx", "duckdb", "polars"]
+connectorx = ["dep:connectorx", "dep:arrow2", "dep:postgres", "dep:postgres-native-tls", "dep:postgres-openssl"]
 datafusion = ["dep:datafusion"]
 duckdb = ["dep:duckdb", "dep:arrow", "dep:parquet"]
 polars = ["dep:polars"]

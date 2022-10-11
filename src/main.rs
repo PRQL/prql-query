@@ -192,8 +192,7 @@ fn main() -> Result<()> {
         backend = if args_database.starts_with("duckdb") {
             String::from("duckdb")
         } else {
-            // FIXME: Replace this with connectorx when implemented
-            String::from("duckdb")
+            String::from("connectorx")
         };
         database = args_database.to_string();
     } else {
@@ -233,6 +232,11 @@ fn main() -> Result<()> {
             ))?;
             found_backend = true;
         }
+        #[cfg(feature = "connectorx")]
+        if backend == "connectorx" {
+            backends::connectorx::query(&query, &sources, &to, &database, &format, &args.writer)?;
+            found_backend = true;
+        } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
             backends::duckdb::query(&query, &sources, &to, &database, &format, &args.writer)?;
