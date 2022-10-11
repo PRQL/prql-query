@@ -1,6 +1,3 @@
-#[cfg(feature = "connectorx")]
-pub mod connectorx;
-
 #[cfg(feature = "datafusion")]
 pub mod datafusion;
 

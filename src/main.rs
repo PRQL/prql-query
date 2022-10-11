@@ -176,8 +176,6 @@ fn main() -> Result<()> {
     if let Some(args_database) = args.database {
         backend = if args_database.starts_with("duckdb") {
             String::from("duckdb")
-        } else {
-            String::from("connectorx")
         };
         database = args_database.to_string();
     } else {
@@ -210,11 +208,6 @@ fn main() -> Result<()> {
             rt.block_on(backends::datafusion::query(&query, &sources, &to, &database, &format, &args.writer))?;
             found_backend = true;
         }
-        #[cfg(feature = "connectorx")]
-        if backend == "connectorx" {
-            backends::connectorx::query(&query, &sources, &to, &database, &format, &args.writer)?;
-            found_backend = true;
-        } 
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
             backends::duckdb::query(&query, &sources, &to, &database, &format, &args.writer)?;

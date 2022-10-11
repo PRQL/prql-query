@@ -77,14 +77,6 @@ Or using the `mysql` client for MySQL with a PRQL query stored in a file:
 
 Similarly for MS SQL Server and other databases.
 
-### Querying data from a database (using `pq`)
-
-For convenience, the `pq` tool comes with database connectivity built-in. We use the [`connector-x`](https://github.com/sfu-db/connector-x) Rust library to query your database. Please see the [connector-x documentation](https://sfu-db.github.io/connector-x/databases.html) for details on how to specify the connection strings for each supported database.
-
-Using the previous example, you could query this directly with
-
-    $ pq --database postgresql://username:password@host:port/database 'from my_schema.my_table | take 5'
-
 ### Environment Variables
 
 If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `pq` allows you to supply all command line arguments from environment variables with a `PQ_` prefix. So for example the same query from above could be achieved with:
@@ -178,11 +170,11 @@ Currently csv, parquet and json file formats are supported for both readers and 
 * [x] Cleanup multiple --from code and enable
 * [x] Reenable DuckDB backend for multiple sources
 * [x] Add support for environment variables eg PQ_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
-* [x] Add connectorx support (Postgresql, MySQL)
 * [x] Add formatted table output to DuckDB backend
 * [x] Use an Enum for the output format checks
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Make --sql an option for SQL query support
+* [ ] Add connectorx support (Postgresql, MySQL)
 * [ ] Enable output formats for connectorx
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
 * [ ] Support --schema argument
