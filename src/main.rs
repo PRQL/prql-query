@@ -2,14 +2,14 @@
 
 mod backends;
 
-use anyhow::{Result, anyhow};
-use log::{debug, info, warn, error};
+use anyhow::{anyhow, Result};
+use log::{debug, error, info, warn};
 
-use std::fmt::{self, Debug, Display};
-use std::collections::{HashMap, HashSet};
-use std::io::prelude::*;
-use std::{io,fs};
 use camino::Utf8Path;
+use std::collections::{HashMap, HashSet};
+use std::fmt::{self, Debug, Display};
+use std::io::prelude::*;
+use std::{fs, io};
 
 use clap::{Parser, ValueEnum};
 use prql_compiler::compile;
@@ -24,15 +24,15 @@ cfg_if::cfg_if! {
     }
 }
 
-const SUPPORTED_FILE_TYPES : [&str; 4] = ["csv", "json", "parquet", "avro"];
-const SUPPORTED_FORMATS : [&str; 4] = ["csv", "json", "parquet", "table"];
+const SUPPORTED_FILE_TYPES: [&str; 4] = ["csv", "json", "parquet", "avro"];
+const SUPPORTED_FORMATS: [&str; 4] = ["csv", "json", "parquet", "table"];
 
 // Some type aliases for consistency
 type FromType = Vec<String>;
-type SourcesType = Vec<(String,String)>;
+type SourcesType = Vec<(String, String)>;
 
 /// pq: query and transform data with PRQL
-#[derive(Parser,Debug)]
+#[derive(Parser, Debug)]
 struct Cli {
     /// The file(s) to read data FROM if given
     #[clap(short, long, value_parser, env = "PQ_FROM")]
@@ -45,7 +45,7 @@ struct Cli {
     /// The database to connect to
     #[clap(short, long, value_parser, env = "PQ_DATABASE")]
     database: Option<String>,
-    
+
     /// The backend to use to process the query
     #[clap(short, long, value_parser, env = "PQ_BACKEND")]
     backend: Option<String>,
@@ -59,7 +59,14 @@ struct Cli {
     format: Option<OutputFormat>,
 
     /// The Writer to use for writing the output
-    #[clap(short, long, arg_enum, value_parser, default_value = "arrow", env = "PQ_WRITER")]
+    #[clap(
+        short,
+        long,
+        arg_enum,
+        value_parser,
+        default_value = "arrow",
+        env = "PQ_WRITER"
+    )]
     writer: OutputWriter,
 
     /// set this to pass a SQL query rather than a PRQL one
@@ -92,7 +99,7 @@ impl fmt::Display for OutputFormat {
 #[allow(non_camel_case_types)]
 pub enum OutputWriter {
     arrow,
-    backend
+    backend,
 }
 
 fn main() -> Result<()> {
@@ -103,7 +110,7 @@ fn main() -> Result<()> {
     debug!("args = {args:?}");
 
     // args.query
-    let mut query : String; 
+    let mut query: String;
     if args.query == "-" {
         if atty::is(atty::Stream::Stdin) {
             println!("Enter QUERY, then press Ctrl-d:");
@@ -113,8 +120,7 @@ fn main() -> Result<()> {
         io::stdin().read_to_string(&mut query);
     } else if args.query.ends_with(".prql") {
         query = fs::read_to_string(&args.query)?;
-    }
-    else {
+    } else {
         query = String::from(&args.query);
     }
     query = query.trim().to_string();
@@ -146,10 +152,15 @@ fn main() -> Result<()> {
     debug!("args.format = {0:?}", &args.format);
     let format: OutputFormat;
     if let Some(args_format) = args.format {
-        if to == "-" && atty::is(atty::Stream::Stdout) && vec![OutputFormat::parquet].contains(&args_format) {
+        if to == "-"
+            && atty::is(atty::Stream::Stdout)
+            && vec![OutputFormat::parquet].contains(&args_format)
+        {
             return Err(anyhow!("Cannot print format={args_format:?} to stdout."));
         } else if to != "-" && !to.ends_with(&args_format.to_string()) {
-            return Err(anyhow!("to={to:?} is incompatible with format={args_format:?}!"));
+            return Err(anyhow!(
+                "to={to:?} is incompatible with format={args_format:?}!"
+            ));
         }
         format = args_format;
     } else {
@@ -157,20 +168,24 @@ fn main() -> Result<()> {
         if to == "-" {
             format = OutputFormat::table;
         } else {
-            format = match to.split(".").last().ok_or(anyhow!("No extension format found in {to:?}"))? {
+            format = match to
+                .split(".")
+                .last()
+                .ok_or(anyhow!("No extension format found in {to:?}"))?
+            {
                 "csv" => OutputFormat::csv,
                 "json" => OutputFormat::json,
                 "parquet" => OutputFormat::parquet,
                 "table" | "tbl" => OutputFormat::table,
-                fileext => return  Err(anyhow!(".{fileext} files are currently not supported.")),
+                fileext => return Err(anyhow!(".{fileext} files are currently not supported.")),
             };
         }
         info!("inferred format = {format:?}");
     }
     debug!("format = {0:?}", &args.format);
 
-    let mut backend : String = String::from("");
-    let mut database : String = String::from("");
+    let mut backend: String = String::from("");
+    let mut database: String = String::from("");
 
     debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
@@ -192,7 +207,7 @@ fn main() -> Result<()> {
 
     debug!("args.writer = {0:?}", &args.writer);
 
-    if args.no_exec || (database=="" && args.from.len()==0 && !args.sql)  {
+    if args.no_exec || (database == "" && args.from.len() == 0 && !args.sql) {
         let sql = get_sql_from_query(&query)?;
         println!("{}", &sql);
     } else {
@@ -205,16 +220,25 @@ fn main() -> Result<()> {
                 .enable_all()
                 .build()?;
 
-            rt.block_on(backends::datafusion::query(&query, &sources, &to, &database, &format, &args.writer))?;
+            rt.block_on(backends::datafusion::query(
+                &query,
+                &sources,
+                &to,
+                &database,
+                &format,
+                &args.writer,
+            ))?;
             found_backend = true;
         }
         #[cfg(feature = "duckdb")]
         if backend == "duckdb" {
             backends::duckdb::query(&query, &sources, &to, &database, &format, &args.writer)?;
             found_backend = true;
-        } 
+        }
         if !found_backend {
-            return Err(anyhow!("No backends found! Consider running with the -no-exec flag set."));
+            return Err(anyhow!(
+                "No backends found! Consider running with the -no-exec flag set."
+            ));
         }
     }
 
@@ -243,29 +267,34 @@ fn get_sql_from_query(query: &str) -> Result<String> {
 
 fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     debug!("from={from:?}");
-    let supported_file_types : HashSet<&str> = HashSet::from(SUPPORTED_FILE_TYPES);
+    let supported_file_types: HashSet<&str> = HashSet::from(SUPPORTED_FILE_TYPES);
     // let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
-    let mut sources : SourcesType = SourcesType::new();
+    let mut sources: SourcesType = SourcesType::new();
     for fromstr in from.iter() {
-        let mut fromparts : Vec<&str> = fromstr.split("=").collect();
+        let mut fromparts: Vec<&str> = fromstr.split("=").collect();
         // FIXME: Should only to the following for files, currently this is getting
         //        it wrong for tablenames of the form schema_name.table_name.
-        if fromparts.len()==1 {
+        if fromparts.len() == 1 {
             let filepath = Utf8Path::new(fromparts[0]);
-            let fileext = filepath.extension()
+            let fileext = filepath
+                .extension()
                 .ok_or(anyhow!("No extension in: {filepath}"))?;
             if supported_file_types.contains(&fileext) {
                 // Dealing with a file
-                let last_component = filepath.components().last()
+                let last_component = filepath
+                    .components()
+                    .last()
                     .ok_or(anyhow!("There was no last component of: {filepath}"))?;
-                let filename = last_component.as_str().split(".").next()
+                let filename = last_component
+                    .as_str()
+                    .split(".")
+                    .next()
                     .ok_or(anyhow!("No filename found in: {last_component}"))?;
                 fromparts = vec![filename, fromparts[0]];
             } else {
                 // Dealing with a possible tablename with schema prefix
-                let tableparts : Vec<&str> = fromparts[0].split(" ").collect();
-                let tablename = tableparts.last()
-                    .ok_or(anyhow!("No last tablepart"))?;
+                let tableparts: Vec<&str> = fromparts[0].split(" ").collect();
+                let tablename = tableparts.last().ok_or(anyhow!("No last tablepart"))?;
                 fromparts = vec![tablename, fromparts[0]];
             }
         }

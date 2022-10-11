@@ -1,25 +1,34 @@
 use std::io::prelude::*;
 
-use anyhow::{Result, anyhow};
-use log::{debug, info, warn, error};
+use anyhow::{anyhow, Result};
+use log::{debug, error, info, warn};
 
-use datafusion::prelude::*;
 use datafusion::dataframe::DataFrame;
 use datafusion::datasource::listing::{ListingTable, ListingTableConfig};
+use datafusion::prelude::*;
 
 // writer imports
-use datafusion::arrow::{csv, json};
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::arrow::util::pretty::pretty_format_batches;
+use datafusion::arrow::{csv, json};
 use datafusion::parquet::arrow::arrow_writer;
 
-use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to, get_sql_from_query};
+use crate::{get_dest_from_to, get_sql_from_query, OutputFormat, OutputWriter, SourcesType};
 
-pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
-
+pub async fn query(
+    query: &str,
+    sources: &SourcesType,
+    to: &str,
+    database: &str,
+    format: &OutputFormat,
+    writer: &OutputWriter,
+) -> Result<()> {
     // compile the PRQL to SQL
     let sql = get_sql_from_query(query)?;
-    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
+    debug!(
+        "sql = {:?}",
+        sql.split_whitespace().collect::<Vec<&str>>().join(" ")
+    );
 
     // Create the context
     let config = SessionConfig::new().with_information_schema(true);
@@ -27,11 +36,14 @@ pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str,
 
     for (alias, filename) in sources.iter() {
         if filename.ends_with("csv") {
-            ctx.register_csv(alias, filename, CsvReadOptions::new()).await?;
+            ctx.register_csv(alias, filename, CsvReadOptions::new())
+                .await?;
         } else if filename.ends_with("json") {
-            ctx.register_json(alias, filename, NdJsonReadOptions::default()).await?;
+            ctx.register_json(alias, filename, NdJsonReadOptions::default())
+                .await?;
         } else if filename.ends_with("parquet") {
-            ctx.register_parquet(alias, filename, ParquetReadOptions::default()).await?;
+            ctx.register_parquet(alias, filename, ParquetReadOptions::default())
+                .await?;
         } else {
             unimplemented!("filename={filename:?}");
         }
@@ -43,11 +55,15 @@ pub async fn query(query: &str, sources: &SourcesType, to: &str, database: &str,
 
     match writer {
         OutputWriter::arrow => write_results_with_arrow(&df.collect().await?, to, format),
-        OutputWriter::backend => write_results_with_datafusion(&df, to, format).await
+        OutputWriter::backend => write_results_with_datafusion(&df, to, format).await,
     }
 }
 
-async fn write_results_with_datafusion(df: &DataFrame, to: &str, format: &OutputFormat) -> Result<()> {
+async fn write_results_with_datafusion(
+    df: &DataFrame,
+    to: &str,
+    format: &OutputFormat,
+) -> Result<()> {
     // Write the results using the native datafusion writer
     match format {
         OutputFormat::csv => df.write_csv(to).await?,
@@ -60,7 +76,6 @@ async fn write_results_with_datafusion(df: &DataFrame, to: &str, format: &Output
 }
 
 fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {
-
     let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
     match format {

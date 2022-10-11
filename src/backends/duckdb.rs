@@ -1,27 +1,39 @@
 use std::io::prelude::*;
 
 use anyhow::Result;
-use log::{debug, info, warn, error};
+use log::{debug, error, info, warn};
 
-use arrow::{csv, json};
 use arrow::record_batch::RecordBatch;
 use arrow::util::pretty::pretty_format_batches;
+use arrow::{csv, json};
 use parquet::arrow::arrow_writer;
 
-use duckdb::{Connection, types::{ValueRef, FromSql}};
 use chrono::{DateTime, Utc};
+use duckdb::{
+    types::{FromSql, ValueRef},
+    Connection,
+};
 
-use crate::{SourcesType, OutputFormat, OutputWriter, get_dest_from_to, get_sql_from_query};
+use crate::{get_dest_from_to, get_sql_from_query, OutputFormat, OutputWriter, SourcesType};
 
-pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, format: &OutputFormat, writer: &OutputWriter) -> Result<()> {
-
+pub fn query(
+    query: &str,
+    sources: &SourcesType,
+    to: &str,
+    database: &str,
+    format: &OutputFormat,
+    writer: &OutputWriter,
+) -> Result<()> {
     let mut query = query.to_string();
     if query.starts_with("prql ") {
         // prepend CTEs for the source aliases
         let mut lines: Vec<String> = query.split("\n").map(|s| s.to_string()).collect();
         for (alias, source) in sources.iter() {
             // Needs the _{}_ on the LHS for _{}_.*
-            lines.insert(1, format!("table {alias} = (from __{alias}__=__file_{alias}__)"));
+            lines.insert(
+                1,
+                format!("table {alias} = (from __{alias}__=__file_{alias}__)"),
+            );
         }
         query = lines.join("\n");
         debug!("query = {query:?}");
@@ -29,7 +41,10 @@ pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, forma
 
     // compile the PRQL to SQL
     let mut sql = get_sql_from_query(&query)?;
-    debug!("sql = {:?}", sql.split_whitespace().collect::<Vec<&str>>().join(" "));
+    debug!(
+        "sql = {:?}",
+        sql.split_whitespace().collect::<Vec<&str>>().join(" ")
+    );
 
     if query.starts_with("prql ") {
         // replace the table placeholders again
@@ -51,7 +66,7 @@ pub fn query(query: &str, sources: &SourcesType, to: &str, database: &str, forma
 
     match writer {
         OutputWriter::arrow => write_results_with_arrow(&rbs, to, format),
-        OutputWriter::backend => write_results_with_duckdb(&rbs, to, format)
+        OutputWriter::backend => write_results_with_duckdb(&rbs, to, format),
     }
 }
 
@@ -60,7 +75,6 @@ fn write_results_with_duckdb(rbs: &[RecordBatch], to: &str, format: &OutputForma
 }
 
 fn write_results_with_arrow(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {
-
     let mut dest: Box<dyn Write> = get_dest_from_to(to)?;
 
     match format {
