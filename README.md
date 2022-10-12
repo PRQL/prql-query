@@ -4,20 +4,23 @@
 
 ### Download a binary from Github Release
 
-Coming soon ...
+Binaries are built for Windows, macOS and Linux for every release and can be 
+dowloaded from [https://github.com/snth/pq/releases/]().
 
 ### Run as a container image (Docker)
 
 Coming soon ...
 
-    docker build -t prql-query .
-    alias pq="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) prql-query"
+    git clone https://github.com/snth/pq.git
+    cd pq
+    docker build -t pq .
+    alias pq="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) pq"
     pq --help
 
 ### Via Rust toolchain (Cargo)
 
-    git clone -b tool https://github.com/snth/prql.git
-    cd prql/prql-query
+    git clone https://github.com/snth/pq.git
+    cd pq
     cargo install --path .
 
 ## Usage
