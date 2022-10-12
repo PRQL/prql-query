@@ -9,12 +9,10 @@ dowloaded from [Releases](https://github.com/snth/pq/releases/) ([latest](https:
 
 ### Run as a container image (Docker)
 
-Coming soon ...
-
     git clone https://github.com/snth/pq.git
     cd pq
     docker build -t pq .
-    alias pq="docker run --rm -it -v $(pwd):/tmp -w /tmp -u $(id -u):$(id -g) pq"
+    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) pq"
     pq --help
 
 ### Via Rust toolchain (Cargo)

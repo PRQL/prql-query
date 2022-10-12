@@ -2,6 +2,7 @@
 
 ## 0.0.4 - UNRELEASED
 
+* Added Dockerfile.
 * Acknowledged that release artefacts are still compressed.
 
 ## 0.0.3 - 2022-10-12
