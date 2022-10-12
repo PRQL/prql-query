@@ -2,7 +2,7 @@
 description = "pq: query and transform data with PRQL"
 name = "pq"
 edition = "2021"
-version = "0.0.3"
+version = "0.0.4"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

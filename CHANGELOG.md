@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.4 - UNRELEASED
+
+* Acknowledged that release artefacts are still compressed.
+
 ## 0.0.3 - 2022-10-12
 
 * Added CHANGELOG.md
