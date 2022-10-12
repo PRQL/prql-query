@@ -56,10 +56,8 @@ dowloaded from [Releases](https://github.com/prql/prql-query/releases/)
 
 ### Run as a container image (Docker)
 
-    git clone https://github.com/prql/prql-query.git
-    cd prql-query
-    docker build -t pq .
-    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) pq"
+    docker pull ghcr.io/prql/prql-query:v0.0.8
+    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) ghcr.io.prql/prql-query:v0.0.8"
     pq --help
 
 ### Via Rust toolchain (Cargo)
