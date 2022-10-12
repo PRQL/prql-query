@@ -1,0 +1,11 @@
+INSERT INTO playlists SELECT * FROM '../csv/playlists.csv';
+INSERT INTO playlist_track SELECT * FROM '../csv/playlist_track.csv';
+INSERT INTO genres SELECT * FROM '../csv/genres.csv';
+INSERT INTO albums SELECT * FROM '../csv/albums.csv';
+INSERT INTO tracks SELECT * FROM '../csv/tracks.csv';
+INSERT INTO invoice_items SELECT * FROM '../csv/invoice_items.csv';
+INSERT INTO artists SELECT * FROM '../csv/artists.csv';
+INSERT INTO employees SELECT * FROM '../csv/employees.csv';
+INSERT INTO customers SELECT * FROM '../csv/customers.csv';
+INSERT INTO invoices SELECT * FROM '../csv/invoices.csv';
+INSERT INTO media_types SELECT * FROM '../csv/media_types.csv';

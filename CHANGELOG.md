@@ -2,6 +2,7 @@
 
 ## 0.0.4 - UNRELEASED
 
+* Added Chinook database example data.
 * Added Dockerfile.
 * Acknowledged that release artefacts are still compressed.
 

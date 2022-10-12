@@ -176,8 +176,8 @@ Or say that you have a `status_query.prql` that you need to run for a number of 
 * [x] Add formatted table output to DuckDB backend
 * [x] Use an Enum for the output format checks
 * [x] Make --sql an option for SQL query support
-* [ ] Add Github Actions to build binary artefacts
-* [ ] Add chinook example data
+* [x] Add Github Actions to build binary artefacts
+* [x] Add chinook example data
 * [ ] Add tests
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Add connectorx support (Postgresql, MySQL)
