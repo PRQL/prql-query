@@ -5,7 +5,7 @@
 ### Download a binary from Github Release
 
 Binaries are built for Windows, macOS and Linux for every release and can be 
-dowloaded from [https://github.com/snth/pq/releases/]().
+dowloaded from [Releases](https://github.com/snth/pq/releases/) ([latest](https://github.com/snth/pq/releases/latest)).
 
 ### Run as a container image (Docker)
 
