@@ -2395,6 +2395,7 @@ dependencies = [
  "parquet 23.0.0",
  "polars",
  "prql-compiler",
+ "regex",
  "tokio",
  "url",
 ]

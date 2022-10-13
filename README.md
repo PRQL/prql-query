@@ -217,12 +217,13 @@ One noteworthy limitation of this approach is that you can only query
 tables in the postgres database and not views.
 
 By default you will be connected to the "public" schema and can reference tables
-there within your query. If you want to query tables from another schema
-then you currently have to reference these through aliased `--from` parameters
-like so:
+there within your query. You can specify a different schema to connect to using
+the "?currentSchema=schema" paramter. If you want to query tables from another schema
+outside of that then you currently have to reference these through aliased
+`--from` parameters like so:
 
-    $ pq -d postgresql://username:password@host:port/database \
-        --from alias=schema.table 'from alias | take 10'
+    $ pq -d postgresql://username:password@host:port/database?currentSchema=schema \
+        --from alias=other_schema.table 'from alias | take 10'
 
 ### Environment Variables
 

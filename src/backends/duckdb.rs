@@ -13,6 +13,7 @@ use duckdb::{
     types::{FromSql, ValueRef},
     Connection,
 };
+use regex::Regex;
 
 use crate::{get_dest_from_to, get_sql_from_query, OutputFormat, OutputWriter, SourcesType};
 
@@ -63,8 +64,12 @@ pub fn query(
                 if parts.len() == 1 {
                     parts.insert(0, "public");
                 }
-                let table = parts.pop().ok_or(anyhow!("Couldn't extract table name from {source}."))?;
-                let schema = parts.pop().ok_or(anyhow!("Couldn't extract schema name from {source}."))?;
+                let table = parts
+                    .pop()
+                    .ok_or(anyhow!("Couldn't extract table name from {source}."))?;
+                let schema = parts
+                    .pop()
+                    .ok_or(anyhow!("Couldn't extract schema name from {source}."))?;
                 format!("postgres_scan('{database}', '{schema}', '{table}')")
             } else {
                 format!(r#"'{source}'"#)
@@ -90,10 +95,26 @@ pub fn query(
         con
     } else if database.starts_with("postgres") {
         let con = Connection::open_in_memory()?;
+        // Check if a schema was specified
+        let re = Regex::new(r"^(?P<uri>[^?]+)(?P<schema>\?currentSchema=.+)?$")?;
+        let caps = re
+            .captures(database)
+            .ok_or(anyhow!("Couldn't match regex!"))?;
+        let uri = caps
+            .name("uri")
+            .ok_or(anyhow!("Couldn't extract URI!"))?
+            .as_str();
+        debug!("uri={:?}", uri);
+        let schema_param = caps
+            .name("schema")
+            .map_or("?currentSchema=public", |p| p.as_str());
+        let schema = schema_param.split("=").last().map_or("public", |p| p);
+        debug!("schema={:?}", schema);
         // Install and load the postgres_scanner extension
         let load_extension = "INSTALL postgres_scanner; LOAD postgres_scanner;";
         con.execute_batch(load_extension)?;
-        let attach_sql = format!("CALL postgres_attach('{database}')");
+        let attach_sql = format!("CALL postgres_attach('{uri}', source_schema='{schema}')");
+        debug!("attach_sql={:?}", attach_sql);
         con.execute_batch(&attach_sql)?;
         con
     } else {
