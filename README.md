@@ -186,19 +186,29 @@ Currently csv, parquet and json file formats are supported for both readers and 
     | 25          | 42.62              |
     +-------------+--------------------+
 
+### Querying data in a DuckDB database
+
+    $ pq -d duckdb://examples/chinook/duckdb/chinook.duckdb \
+        'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
+
 ### Environment Variables
 
-If you plan to work with the same database repeatedly, then specifying the details each time quickly becomes tedious. `pq` allows you to supply all command line arguments from environment variables with a `PQ_` prefix. So for example the same query from above could be achieved with:
+If you plan to work with the same database repeatedly, then specifying the
+details each time quickly becomes tedious. `pq` allows you to supply all
+command line arguments from environment variables with a `PQ_` prefix. So for
+example the same query from above could be achieved with:
 
-    $ export PQ_DATABASE="postgresql://username:password@host:port/database"
-    $ pq 'from my_schema.my_table | take 5'
+    $ export PQ_DATABASE="duckdb://examples/chinook/duckdb/chinook.duckdb"
+    $ pq 'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
 
 ### .env files
 
-Environment variables can also be read from a `.env` files. Since you probably don't want to expose your database credentials at the shell, it makes sense to put these in a `.env` file. This also allows you to set up directories with configuration for common environments together with common queries for that environment, for example:
+Environment variables can also be read from a `.env` files. Since you probably
+don't want to expose your database credentials at the shell, it makes sense to
+put these in a `.env` file. This also allows you to set up directories with
+configuration for common environments together with common queries for that
+environment, for example:
 
-    $ mkdir prod
-    $ cd prod
     $ echo 'PQ_DATABASE="postgresql://username:password@host:port/database"' > .env
     $ pq 'from my_schema.my_table | take 5'
 

@@ -20,7 +20,7 @@
 * [x] Add Github Actions to build binary artefacts
 * [x] Add chinook example data
 * [x] Add leading examples
-* [ ] Add support for DuckDB database files
+* [x] Add support for DuckDB database files
 * [ ] Add tests
 * [ ] Publish to crates.io
 * [ ] Publish to homebrew
