@@ -188,8 +188,32 @@ Currently csv, parquet and json file formats are supported for both readers and 
 
 ### Querying data in a DuckDB database
 
-    $ pq -d duckdb://examples/chinook/duckdb/chinook.duckdb \
+DuckDB is natively supported and can be queried by supplying a database URI
+beginning with "duckdb://".
+
+    $ pq --database duckdb://examples/chinook/duckdb/chinook.duckdb \
         'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
+
+### Querying PostgreSQL databases
+
+PostgreSQL is currently supported through the
+[postgres-scanner](https://github.com/duckdblabs/postgres_scanner) DuckDB
+extension. (See the [announcement blog post](https://duckdb.org/2022/09/30/postgres-scanner) 
+for a good introduction.)
+
+    $ pq -d postgresql://username:password@host:port/database \
+        'from table | take 10'
+
+One noteworthy limitation of this approach is that you can only query
+tables in the postgres database and not views.
+
+By default you will be connected to the "public" schema and can reference tables
+there within your query. If you want to query tables from another schema
+then you currently have to reference these through aliased `--from` parameters
+like so:
+
+    $ pq -d postgresql://username:password@host:port/database \
+        --from alias=schema.table 'from alias | take 10'
 
 ### Environment Variables
 
@@ -198,8 +222,8 @@ details each time quickly becomes tedious. `pq` allows you to supply all
 command line arguments from environment variables with a `PQ_` prefix. So for
 example the same query from above could be achieved with:
 
-    $ export PQ_DATABASE="duckdb://examples/chinook/duckdb/chinook.duckdb"
-    $ pq 'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
+    $ export PQ_DATABASE="postgresql://username:password@host:port/database"
+    $ pq --from alias=schema.table 'take 10'
 
 ### .env files
 

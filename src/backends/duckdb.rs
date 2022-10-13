@@ -28,7 +28,9 @@ pub fn query(
     if query.starts_with("prql ") {
         // prepend CTEs for the source aliases
         let mut lines: Vec<String> = query.split("\n").map(|s| s.to_string()).collect();
+        debug!("sources = {sources:?}");
         for (alias, source) in sources.iter() {
+            debug!("alias = {alias:?}; source = {source:?}");
             // Needs the _{}_ on the LHS for _{}_.*
             lines.insert(
                 1,
@@ -49,12 +51,21 @@ pub fn query(
     if query.starts_with("prql ") {
         // replace the table placeholders again
         for (alias, source) in sources.iter() {
+            debug!("alias = {alias:?}; source = {source:?}");
             let placeholder = format!("__file_{alias}__");
             debug!("placeholder = {placeholder:?}");
             let quoted_source = if source.ends_with(".csv") {
                 format!("read_csv_auto('{source}')")
             } else if source.ends_with(".parquet") {
                 format!("read_parquet('{source}')")
+            } else if database.starts_with("postgres") {
+                let mut parts: Vec<&str> = source.split(".").collect();
+                if parts.len() == 1 {
+                    parts.insert(0, "public");
+                }
+                let table = parts.pop().ok_or(anyhow!("Couldn't extract table name from {source}."))?;
+                let schema = parts.pop().ok_or(anyhow!("Couldn't extract schema name from {source}."))?;
+                format!("postgres_scan('{database}', '{schema}', '{table}')")
             } else {
                 format!(r#"'{source}'"#)
             };
@@ -68,6 +79,14 @@ pub fn query(
     let conn = if database == "" {
         debug!("Opening in-memory DuckDB database");
         Connection::open_in_memory()?
+    } else if database.starts_with("postgres") {
+        let con = Connection::open_in_memory()?;
+        // Install and load the postgres_scanner extension
+        let load_postgres_extension = "INSTALL postgres_scanner; LOAD postgres_scanner;";
+        con.execute_batch(load_postgres_extension)?;
+         let attach_sql = format!("CALL postgres_attach('{database}')");
+         con.execute_batch(&attach_sql)?;
+        con
     } else {
         let dbpath = database.strip_prefix("duckdb://").map_or(database, |p| p);
         debug!("Opening DuckDB database: dbpath={:?}", dbpath);
@@ -77,7 +96,7 @@ pub fn query(
     // Install and load the parquet extension
     // FIXME: Be smarter about this and only do it where required
     let load_parquet_extension = "INSTALL parquet; LOAD parquet;";
-    conn.execute_batch(load_parquet_extension);
+    conn.execute_batch(load_parquet_extension)?;
 
     // Execute the query
     let mut stmt = conn.prepare(&sql)?;
