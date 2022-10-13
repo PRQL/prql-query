@@ -1,4 +1,4 @@
-# pq (prql-query): query and transform data with PRQL
+# pq: query and transform data with PRQL
 
 [PRQL](https://prql-lang.org/) is a modern language for transforming data
 — a simple, powerful, pipelined SQL replacement
@@ -22,18 +22,18 @@ DataFusion](https://arrow.apache.org/datafusion/) and
     | 5        | Big Ones                              | 3         |
     +----------+---------------------------------------+-----------+
 
-    pq --from i=invoices.csv --from c=customers.csv --to invoices_with_fullnames.parquet 'from i | join c [customer_id] | derive [full_name = f"{first_name} {last_name}"]'
-    pq -f invoices_with_fullnames.parquet --format json 'group full_name (aggregate [customer_total = sum total]) | sort [-customer_total] | take 10'
-    {"customer_total":49.620000000000005,"full_name":"Helena Holý"}
-    {"customer_total":47.620000000000005,"full_name":"Richard Cunningham"}
-    {"customer_total":46.62,"full_name":"Luis Rojas"}
-    {"customer_total":45.62,"full_name":"Ladislav Kovács"}
-    {"customer_total":45.62,"full_name":"Hugh O'Reilly"}
-    {"customer_total":43.620000000000005,"full_name":"Julia Barnett"}
-    {"customer_total":43.62,"full_name":"Fynn Zimmermann"}
-    {"customer_total":43.62,"full_name":"Frank Ralston"}
-    {"customer_total":42.62,"full_name":"Astrid Gruber"}
-    {"customer_total":42.62,"full_name":"Victor Stevens"}
+    pq -f i=invoices.csv -f c=customers.csv -t invoices_w_names.parquet 'from i|join c [customer_id]|derive [name=f"{first_name} {last_name}"]' 
+    pq -f invoices_w_names.parquet --format json 'group name (aggregate [spend = sum total]) | sort [-spend] | take 10'
+    {"name":"Helena Holý","spend":49.620000000000005}
+    {"name":"Richard Cunningham","spend":47.620000000000005}
+    {"name":"Luis Rojas","spend":46.62}
+    {"name":"Hugh O'Reilly","spend":45.62}
+    {"name":"Ladislav Kovács","spend":45.62}
+    {"name":"Julia Barnett","spend":43.620000000000005}
+    {"name":"Fynn Zimmermann","spend":43.62}
+    {"name":"Frank Ralston","spend":43.62}
+    {"name":"Astrid Gruber","spend":42.62}
+    {"name":"Victor Stevens","spend":42.62}
 
 ## Installation
 
