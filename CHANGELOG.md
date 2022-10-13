@@ -1,6 +1,11 @@
 # pq Changelog
 
-## 0.0.4 - UNRELEASED
+## 0.0.5 - UNRELEASED
+
+* Added support for DuckDB database files.
+* Added UNLICENSED.
+
+## 0.0.4 - 2022-10-13
 
 * Added Chinook database example data.
 * Added Dockerfile.

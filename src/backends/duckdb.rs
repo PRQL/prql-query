@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use log::{debug, error, info, warn};
 
 use arrow::record_batch::RecordBatch;
@@ -59,7 +59,14 @@ pub fn query(
     }
 
     // prepare the connection and statement
-    let conn = Connection::open_in_memory()?;
+    let conn = if database == "" {
+        debug!("Opening in-memory DuckDB database");
+        Connection::open_in_memory()?
+    } else {
+        let dbpath = database.strip_prefix("duckdb://").map_or(database, |p| p);
+        debug!("Opening DuckDB database: dbpath={:?}", dbpath);
+        Connection::open(dbpath)?
+    };
     let mut stmt = conn.prepare(&sql)?;
 
     let rbs = stmt.query_arrow([])?.collect::<Vec<RecordBatch>>();

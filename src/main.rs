@@ -189,7 +189,7 @@ fn main() -> Result<()> {
 
     debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
-        backend = if args_database.starts_with("duckdb") {
+        backend = if args_database.starts_with("duckdb://") {
             String::from("duckdb")
         } else {
             // FIXME: Replace this with connectorx when implemented
