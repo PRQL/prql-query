@@ -22,7 +22,7 @@
 * [x] Add leading examples
 * [x] Add support for DuckDB database files
 * [x] Add support for PostgreSQL through DuckDB
-* [ ] Add support for SQLite through DuckDB
+* [x] Add support for SQLite through DuckDB
 * [ ] Add support for ?currentSchema=schema option postgres URI
 * [ ] Add tests
 * [ ] Publish to crates.io

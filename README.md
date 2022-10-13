@@ -194,6 +194,15 @@ beginning with "duckdb://".
     $ pq --database duckdb://examples/chinook/duckdb/chinook.duckdb \
         'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
 
+### Querying Sqlite databases (WIP)
+
+Sqlite is currently supported through the [sqlite_scanner](https://github.com/duckdblabs/sqlite_scanner)
+DuckDB extension. This appears to work for some queries but not for others
+so this is currently EXPERIMENTAL.
+
+    $ pq --database sqlite://examples/chinook/sqlite/chinook.sqlite \
+        'from albums | select title | take 10'
+
 ### Querying PostgreSQL databases
 
 PostgreSQL is currently supported through the

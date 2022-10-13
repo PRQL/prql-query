@@ -79,13 +79,22 @@ pub fn query(
     let conn = if database == "" {
         debug!("Opening in-memory DuckDB database");
         Connection::open_in_memory()?
+    } else if database.starts_with("sqlite://") {
+        let con = Connection::open_in_memory()?;
+        // Install and load the sqlite_scanner extension
+        let load_extension = "INSTALL sqlite_scanner; LOAD sqlite_scanner;";
+        con.execute_batch(load_extension)?;
+        let dbpath = database.strip_prefix("sqlite://").map_or(database, |p| p);
+        let attach_sql = format!("CALL sqlite_attach('{dbpath}')");
+        con.execute_batch(&attach_sql)?;
+        con
     } else if database.starts_with("postgres") {
         let con = Connection::open_in_memory()?;
         // Install and load the postgres_scanner extension
-        let load_postgres_extension = "INSTALL postgres_scanner; LOAD postgres_scanner;";
-        con.execute_batch(load_postgres_extension)?;
-         let attach_sql = format!("CALL postgres_attach('{database}')");
-         con.execute_batch(&attach_sql)?;
+        let load_extension = "INSTALL postgres_scanner; LOAD postgres_scanner;";
+        con.execute_batch(load_extension)?;
+        let attach_sql = format!("CALL postgres_attach('{database}')");
+        con.execute_batch(&attach_sql)?;
         con
     } else {
         let dbpath = database.strip_prefix("duckdb://").map_or(database, |p| p);

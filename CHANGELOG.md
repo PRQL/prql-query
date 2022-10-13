@@ -1,8 +1,10 @@
 # pq Changelog
 
-## 0.0.5 - UNRELEASED
+## 0.0.5 - 2022-10-13
 
-* Added support for DuckDB database files.
+* Added support for querying PostgreSQL databases (through DuckDB).
+* Added support for querying Sqlite databases (through DuckDB).
+* Added support for querying DuckDB databases.
 * Added UNLICENSED.
 
 ## 0.0.4 - 2022-10-13
