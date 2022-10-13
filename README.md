@@ -1,11 +1,47 @@
-# pq: query and transform data with PRQL
+# pq (prql-query): query and transform data with PRQL
+
+[PRQL](https://prql-lang.org/) is a modern language for transforming data
+— a simple, powerful, pipelined SQL replacement
+
+`pq` allows you to use [PRQL](https://prql-lang.org/) to easily query and
+transform your data. It is powered by  [Apache Arrow
+DataFusion](https://arrow.apache.org/datafusion/) and
+[DuckDB](https://duckdb.org/) and is written in Rust (so it's "blazingly fast"
+™)!
+
+## Examples
+
+    pq --from albums.csv "take 5"
+    +----------+---------------------------------------+-----------+
+    | album_id | title                                 | artist_id |
+    +----------+---------------------------------------+-----------+
+    | 1        | For Those About To Rock We Salute You | 1         |
+    | 2        | Balls to the Wall                     | 2         |
+    | 3        | Restless and Wild                     | 2         |
+    | 4        | Let There Be Rock                     | 1         |
+    | 5        | Big Ones                              | 3         |
+    +----------+---------------------------------------+-----------+
+
+    pq --from i=invoices.csv --from c=customers.csv --to invoices_with_fullnames.parquet 'from i | join c [customer_id] | derive [full_name = f"{first_name} {last_name}"]'
+    pq -f invoices_with_fullnames.parquet --format json 'group full_name (aggregate [customer_total = sum total]) | sort [-customer_total] | take 10'
+    {"customer_total":49.620000000000005,"full_name":"Helena Holý"}
+    {"customer_total":47.620000000000005,"full_name":"Richard Cunningham"}
+    {"customer_total":46.62,"full_name":"Luis Rojas"}
+    {"customer_total":45.62,"full_name":"Ladislav Kovács"}
+    {"customer_total":45.62,"full_name":"Hugh O'Reilly"}
+    {"customer_total":43.620000000000005,"full_name":"Julia Barnett"}
+    {"customer_total":43.62,"full_name":"Fynn Zimmermann"}
+    {"customer_total":43.62,"full_name":"Frank Ralston"}
+    {"customer_total":42.62,"full_name":"Astrid Gruber"}
+    {"customer_total":42.62,"full_name":"Victor Stevens"}
 
 ## Installation
 
 ### Download a binary from Github Release
 
-Binaries are built for Windows, macOS and Linux for every release and can be 
-dowloaded from [Releases](https://github.com/snth/pq/releases/) ([latest](https://github.com/snth/pq/releases/latest)).
+Binaries are built for Windows, macOS and Linux for every release and can be
+dowloaded from [Releases](https://github.com/snth/pq/releases/)
+([latest](https://github.com/snth/pq/releases/latest)).
 
 ### Run as a container image (Docker)
 
@@ -73,7 +109,7 @@ Both of these produce the output:
 
 With the functionality described above, you should be able to query your favourite SQL RDBMS using your favourite CLI client and `pq`. For example with the `psql` client for PostgreSQL:
 
-    $ echo 'from my_table | take 5' | pq | psql postgresql://username:password@host:port/database
+    $ pq "from my_table | take 5" | psql postgresql://username:password@host:port/database
 
 Or using the `mysql` client for MySQL with a PRQL query stored in a file:
 
@@ -156,39 +192,3 @@ Environment variables can also be read from a `.env` files. Since you probably d
 Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
 
     $ for e in prod uat dev; do cd $e && pq ../status_query.prql; done
-
-## TODO
-
-* [x] Add --engine argument
-* [x] Factor out the query function to query(prql, from, to)
-* [x] Switch to camino
-* [x] Rename --engine to --backend
-* [x] Add support from .prql files
-* [x] Add DataFusion support
-* [x] Add DF writer support (csv, parquet, json)
-* [x] Make DuckDB an optional feature
-* [x] Add logging and verbosity for debugging
-* [x] Add --no-exec option
-* [x] Allow multiple --from options with alias naming
-* [x] Cleanup multiple --from code and enable
-* [x] Reenable DuckDB backend for multiple sources
-* [x] Add support for environment variables eg PQ_FROM_EMPLOYEES="employees.csv" -> `from employees="employees.csv"
-* [x] Add formatted table output to DuckDB backend
-* [x] Use an Enum for the output format checks
-* [x] Make --sql an option for SQL query support
-* [x] Add Github Actions to build binary artefacts
-* [x] Add chinook example data
-* [ ] Add tests
-* [ ] Use an Enum for the backend checks/enumeration
-* [ ] Add connectorx support (Postgresql, MySQL)
-* [ ] Enable output formats for connectorx
-* [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
-* [ ] Support --schema argument
-* [ ] Support globs in --from arguments
-* [ ] Move single partitioned files to single output file
-* [ ] Add abbreviations for keywords
-* [ ] Add s3 support
-* [ ] Add Delta Lake support
-* [ ] Add Iceberg support
-* [ ] Add avro support
-* [ ] Switch to eyre from anyhow
