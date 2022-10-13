@@ -1,23 +1,28 @@
-# pq: query and transform data with PRQL
+# pq (prql-query)
 
-[![license](http://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/LICENSE-APACHE)
-[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/LICENSE-MIT)
-[![license](http://img.shields.io/badge/license-UNLICENSE-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/UNLICENSE)
+[![license](http://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://raw.githubusercontent.com/snth/pq/main/LICENSE-APACHE)
+[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/snth/pq/main/LICENSE-MIT)
+[![license](http://img.shields.io/badge/license-UNLICENSE-blue.svg)](https://raw.githubusercontent.com/main/pq/master/UNLICENSE)
+
+## Query and transform data with PRQL
 
 [PRQL](https://prql-lang.org/) is a modern language for transforming data
 — a simple, powerful, pipelined SQL replacement
 
-`pq` allows you to use [PRQL](https://prql-lang.org/) to easily query and
+**`pq`** allows you to use [PRQL](https://prql-lang.org/) to easily query and
 transform your data. It is powered by  [Apache Arrow
 DataFusion](https://arrow.apache.org/datafusion/) and
 [DuckDB](https://duckdb.org/) and is written in Rust (so it's "blazingly fast"
 ™)!
 
-Licensed under Apache, MIT or the [UNLICENSE](https://unlicense.org).
+Licensed under
+[Apache](https://raw.githubusercontent.com/snth/pq/main/LICENSE-APACHE),
+[MIT](https://raw.githubusercontent.com/snth/pq/main/LICENSE-MIT) or the
+[UNLICENSE](https://unlicense.org).
 
 ## Examples
 
-    pq --from albums.csv "take 5"
+    $ pq --from albums.csv "take 5"
     +----------+---------------------------------------+-----------+
     | album_id | title                                 | artist_id |
     +----------+---------------------------------------+-----------+
@@ -28,8 +33,10 @@ Licensed under Apache, MIT or the [UNLICENSE](https://unlicense.org).
     | 5        | Big Ones                              | 3         |
     +----------+---------------------------------------+-----------+
 
-    pq -f i=invoices.csv -f c=customers.csv -t invoices_w_names.parquet 'from i|join c [customer_id]|derive [name=f"{first_name} {last_name}"]' 
-    pq -f invoices_w_names.parquet --format json 'group name (aggregate [spend = sum total]) | sort [-spend] | take 10'
+    $ pq -f i=invoices.csv -f c=customers.csv --to invoices_with_names.parquet \
+        'from i | join c [customer_id] | derive [name = f"{first_name} {last_name}"]' 
+    $ pq -f invoices_with_names.parquet --format json \
+        'group name (aggregate [spend = sum total]) | sort [-spend] | take 10'
     {"name":"Helena Holý","spend":49.620000000000005}
     {"name":"Richard Cunningham","spend":47.620000000000005}
     {"name":"Luis Rojas","spend":46.62}
