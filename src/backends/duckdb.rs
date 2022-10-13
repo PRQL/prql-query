@@ -51,7 +51,13 @@ pub fn query(
         for (alias, source) in sources.iter() {
             let placeholder = format!("__file_{alias}__");
             debug!("placeholder = {placeholder:?}");
-            let quoted_source = format!(r#""{source}""#);
+            let quoted_source = if source.ends_with(".csv") {
+                format!("read_csv_auto('{source}')")
+            } else if source.ends_with(".parquet") {
+                format!("read_parquet('{source}')")
+            } else {
+                format!(r#"'{source}'"#)
+            };
             debug!("quoted_source = {quoted_source:?}");
             sql = sql.replace(&placeholder, &quoted_source);
         }
@@ -67,8 +73,14 @@ pub fn query(
         debug!("Opening DuckDB database: dbpath={:?}", dbpath);
         Connection::open(dbpath)?
     };
-    let mut stmt = conn.prepare(&sql)?;
 
+    // Install and load the parquet extension
+    // FIXME: Be smarter about this and only do it where required
+    let load_parquet_extension = "INSTALL parquet; LOAD parquet;";
+    conn.execute_batch(load_parquet_extension);
+
+    // Execute the query
+    let mut stmt = conn.prepare(&sql)?;
     let rbs = stmt.query_arrow([])?.collect::<Vec<RecordBatch>>();
 
     match writer {
