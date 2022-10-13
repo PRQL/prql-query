@@ -1,5 +1,9 @@
 # pq: query and transform data with PRQL
 
+[![license](http://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/LICENSE-APACHE)
+[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/LICENSE-MIT)
+[![license](http://img.shields.io/badge/license-UNLICENSE-blue.svg)](https://raw.githubusercontent.com/snth/pq/master/UNLICENSE)
+
 [PRQL](https://prql-lang.org/) is a modern language for transforming data
 — a simple, powerful, pipelined SQL replacement
 
@@ -8,6 +12,8 @@ transform your data. It is powered by  [Apache Arrow
 DataFusion](https://arrow.apache.org/datafusion/) and
 [DuckDB](https://duckdb.org/) and is written in Rust (so it's "blazingly fast"
 ™)!
+
+Licensed under Apache, MIT or the [UNLICENSE](https://unlicense.org).
 
 ## Examples
 
