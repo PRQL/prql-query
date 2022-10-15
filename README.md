@@ -249,3 +249,18 @@ environment, for example:
 Or say that you have a `status_query.prql` that you need to run for a number of environments with .env files set up in subdirectories:
 
     $ for e in prod uat dev; do cd $e && pq ../status_query.prql; done
+
+## Roadmap
+
+### 0.1.0
+
+* Tests
+* Publish to crates.io
+
+### 0.2.0
+
+* Support for object stores
+
+### 0.3.0
+
+* Support for other databases through `connectorx`
