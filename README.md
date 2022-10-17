@@ -2,7 +2,6 @@
 
 [![license](http://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-APACHE)
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-MIT)
-[![license](http://img.shields.io/badge/license-UNLICENSE-blue.svg)](https://raw.githubusercontent.com/prql/main/prql-query/master/UNLICENSE)
 
 ## Query and transform data with PRQL
 
@@ -16,9 +15,8 @@ DataFusion](https://arrow.apache.org/datafusion/) and
 ™)!
 
 Licensed under
-[Apache](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-APACHE),
-[MIT](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-MIT) or the
-[UNLICENSE](https://unlicense.org).
+[Apache](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-APACHE) or
+[MIT](https://raw.githubusercontent.com/prql/prql-query/main/LICENSE-MIT).
 
 ## Examples
 
