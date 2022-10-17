@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.10 - 2022-10-18
+
+* Fixed typo in Github action.
+
 ## 0.0.9 - 2022-10-18
 
 * Added Github action for homebrew.
