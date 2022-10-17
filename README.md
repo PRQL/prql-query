@@ -64,9 +64,7 @@ dowloaded from [Releases](https://github.com/prql/prql-query/releases/)
 
 ### Via Rust toolchain (Cargo)
 
-    git clone https://github.com/prql/prql-query.git
-    cd prql-query
-    cargo install --path .
+    cargo install prql-query
 
 ## Usage
 
