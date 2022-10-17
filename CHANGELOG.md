@@ -1,10 +1,13 @@
 # pq Changelog
 
-## 0.0.6 - 2022-10-17
+## 0.0.7 - 2022-10-17
 
 * Updated repo links to point to prql organisation.
-* Updated to prql-compiler version 0.2.9
 * Removed UNLICENSE.
+
+## 0.0.6 - 2022-10-15
+
+* Updated to prql-compiler version 0.2.9
 
 ## 0.0.5 - 2022-10-13
 
