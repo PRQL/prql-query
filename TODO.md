@@ -24,9 +24,10 @@
 * [x] Add support for PostgreSQL through DuckDB
 * [x] Add support for SQLite through DuckDB
 * [x] Add support for ?currentSchema=schema option postgres URI
+* [x] Publish to crates.io
+* [x] Publish to DockerHub/ghcr.io
+* [x] Publish to homebrew
 * [ ] Add tests
-* [ ] Publish to crates.io
-* [ ] Publish to homebrew
 * [ ] Add pq-builder volume to speed up Docker builds
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Add connectorx support (Postgresql, MySQL)
