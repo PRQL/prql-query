@@ -1,8 +1,12 @@
 # pq Changelog
 
-## 0.0.8 - 2022-10-1&
+## 0.0.9 - 2022-10-18
 
-* Added Github action for ghcr.io packages
+* Added Github action for homebrew.
+
+## 0.0.8 - 2022-10-17
+
+* Added Github action for ghcr.io packages.
 
 ## 0.0.7 - 2022-10-17
 
