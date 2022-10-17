@@ -1,8 +1,15 @@
 [package]
+name = "prql-query"
 description = "pq: query and transform data with PRQL"
-name = "pq"
+repository = "https://github.com/prql/prql-query"
+license = "MIT OR Apache-2.0"
 edition = "2021"
-version = "0.0.6"
+rust-version = "1.64.0"
+version = "0.0.7"
+
+[[bin]]
+name = "pq"
+path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

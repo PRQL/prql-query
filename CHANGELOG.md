@@ -1,15 +1,20 @@
 # pq Changelog
 
+## 0.0.7 - 2022-10-17
+
+* Updated repo links to point to prql organisation.
+* Removed UNLICENSE.
+
 ## 0.0.6 - 2022-10-15
 
-* Updtate to prql-compiler version 0.2.9
+* Updated to prql-compiler version 0.2.9
 
 ## 0.0.5 - 2022-10-13
 
 * Added support for querying PostgreSQL databases (through DuckDB).
 * Added support for querying Sqlite databases (through DuckDB).
 * Added support for querying DuckDB databases.
-* Added UNLICENSED.
+* Added UNLICENSE.
 
 ## 0.0.4 - 2022-10-13
 
