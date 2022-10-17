@@ -1,8 +1,8 @@
 [package]
 name = "prql-query"
 description = "pq: query and transform data with PRQL"
-repository = "https://github.com/snth/prql-query"
-license = "Apache-2.0 OR MIT"
+repository = "https://github.com/prql/prql-query"
+license = "MIT OR Apache-2.0"
 edition = "2021"
 rust-version = "1.64.0"
 version = "0.0.6"
