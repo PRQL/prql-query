@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.8 - 2022-10-1&
+
+* Added Github action for ghcr.io packages
+
 ## 0.0.7 - 2022-10-17
 
 * Updated repo links to point to prql organisation.
