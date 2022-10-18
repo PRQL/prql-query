@@ -32,9 +32,11 @@ Licensed under
     +----------+---------------------------------------+-----------+
 
     $ pq -f i=invoices.csv -f c=customers.csv --to invoices_with_names.parquet \
-        'from i | join c [customer_id] | derive [name = f"{first_name} {last_name}"]' 
+        'from i | join c [customer_id] | derive [name = f"{first_name} {last_name}"]'
+
     $ pq -f invoices_with_names.parquet --format json \
         'group name (aggregate [spend = sum total]) | sort [-spend] | take 10'
+
     {"name":"Helena Holý","spend":49.620000000000005}
     {"name":"Richard Cunningham","spend":47.620000000000005}
     {"name":"Luis Rojas","spend":46.62}
