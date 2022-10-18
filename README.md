@@ -56,10 +56,16 @@ Binaries are built for Windows, macOS and Linux for every release and can be
 dowloaded from [Releases](https://github.com/prql/prql-query/releases/)
 ([latest](https://github.com/prql/prql-query/releases/latest)).
 
+For example on linux you could download and install `pq` with:
+
+    VERSION=v0.0.11 wget https://github.com/prql/prql-query/releases/download/$VERSION/pq-x86_64-unknown-linux-gnu.tar.gz && \
+        tar xvzf pq-x86_64-unknown-linux-gnu.tar.gz --directory ~/.local/bin && \
+        rm pq-x86_64-unknown-linux-gnu.tar.gz
+
 ### Run as a container image (Docker)
 
-    docker pull ghcr.io/prql/prql-query:v0.0.11
-    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) ghcr.io/prql/prql-query:v0.0.11"
+    docker pull ghcr.io/prql/prql-query
+    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
     pq --help
 
 ### Via Rust toolchain (Cargo)
