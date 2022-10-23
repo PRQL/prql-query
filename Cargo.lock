@@ -2376,31 +2376,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
-name = "pq"
-version = "0.0.5"
-dependencies = [
- "anyhow",
- "arrow 23.0.0",
- "async-trait",
- "atty",
- "camino",
- "cfg-if",
- "chrono",
- "clap 3.2.22",
- "datafusion",
- "dotenvy",
- "duckdb",
- "env_logger",
- "log",
- "parquet 23.0.0",
- "polars",
- "prql-compiler",
- "regex",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "proc-macro-error"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2462,6 +2437,31 @@ dependencies = [
  "sqlparser 0.25.0",
  "strum 0.24.1",
  "strum_macros 0.24.3",
+]
+
+[[package]]
+name = "prql-query"
+version = "0.0.11"
+dependencies = [
+ "anyhow",
+ "arrow 23.0.0",
+ "async-trait",
+ "atty",
+ "camino",
+ "cfg-if",
+ "chrono",
+ "clap 3.2.22",
+ "datafusion",
+ "dotenvy",
+ "duckdb",
+ "env_logger",
+ "log",
+ "parquet 23.0.0",
+ "polars",
+ "prql-compiler",
+ "regex",
+ "tokio",
+ "url",
 ]
 
 [[package]]
