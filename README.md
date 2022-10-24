@@ -65,7 +65,7 @@ For example on linux you could download and install `pq` with:
 ### Run as a container image (Docker)
 
     docker pull ghcr.io/prql/prql-query
-    alias pq="docker run --rm -it -v $(pwd):/data -w /data -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
+    alias pq="docker run --rm -it -v $(pwd):/data -e HOME=/tmp -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
     pq --help
 
 ### Via Rust toolchain (Cargo)
