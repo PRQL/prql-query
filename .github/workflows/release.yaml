@@ -92,17 +92,17 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   brew-dispatcher:
-    name: Release on homebrew-prql-query
+    name: Release on homebrew-prql
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.HOMEBREW_PRQL_QUERY_TOKEN}}
+          github-token: ${{ secrets.HOMEBREW_PRQL_TOKEN}}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: 'prql',
-              repo: 'homebrew-prql-query',
-              workflow_id: 'update.yml',
+              repo: 'homebrew-prql',
+              workflow_id: 'update-prql-query.yml',
               ref: 'main',
               inputs: {
               version: '${{ github.ref }}',
