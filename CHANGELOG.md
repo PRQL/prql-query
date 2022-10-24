@@ -1,5 +1,10 @@
 # pq Changelog
 
+## 0.0.12 - Unreleased
+
+* Fixed Docker alias command.
+* Fixed spaces in table aliases issue.
+
 ## 0.0.11 - 2022-10-18
 
 * Fixed metadata step in Github action.
