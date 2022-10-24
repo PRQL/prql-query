@@ -1,6 +1,6 @@
 # pq Changelog
 
-## 0.0.12 - Unreleased
+## 0.0.12 - 2022-10-24
 
 * Fixed Docker alias command.
 * Fixed spaces in table aliases issue.
