@@ -50,7 +50,7 @@ Licensed under
 
 ## Installation
 
-### Download a binary from Github Release
+### Download a binary from Github Releases
 
 Binaries are built for Windows, macOS and Linux for every release and can be
 dowloaded from [Releases](https://github.com/prql/prql-query/releases/)
@@ -68,14 +68,14 @@ For example on linux you could download and install `pq` with:
     alias pq="docker run --rm -it -v $(pwd):/data -e HOME=/tmp -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
     pq --help
 
-### Via Rust toolchain (Cargo)
-
-    cargo install prql-query
-
 ### Via Homebrew
 
     brew tap prql/homebrew-prql-query
     brew install prql-query
+
+### Via Rust toolchain (Cargo)
+
+    cargo install prql-query
 
 ## Usage
 
@@ -137,7 +137,7 @@ Or using the `mysql` client for MySQL with a PRQL query stored in a file:
 
 Similarly for MS SQL Server and other databases.
 
-### Querying data in files
+### Querying data in files (csv, parquet, json)
 
 For querying and transforming data stored on the local filesystem, `pq` comes in with a number of built-in backend query processing engines. The default backend is [Apache Arrow DataFusion](https://arrow.apache.org/datafusion/). However [DuckDB](https://duckdb.org/) and [SQLite](https://www.sqlite.org/) (planned) are also supported.
 
