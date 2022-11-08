@@ -95,7 +95,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   brew-dispatcher:
-    needs: create-gh-release
     name: Release on homebrew-prql
     runs-on: ubuntu-latest
     steps:
