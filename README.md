@@ -68,6 +68,9 @@ For example on linux you could download and install `pq` with:
     alias pq="docker run --rm -it -v $(pwd):/data -e HOME=/tmp -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
     pq --help
 
+Please note that if you want to build the container image yourself with Docker then you will need
+at least 10 GB of memory available to the Docker VM, otherwise libduckdb-sys will fail to compile.
+
 ### Via Homebrew
 
     brew tap prql/homebrew-prql-query
