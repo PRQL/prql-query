@@ -68,6 +68,9 @@ For example on linux you could download and install `pq` with:
     alias pq="docker run --rm -it -v $(pwd):/data -e HOME=/tmp -u $(id -u):$(id -g) ghcr.io/prql/prql-query"
     pq --help
 
+Please note that if you want to build the container image yourself with Docker then you will need
+at least 10 GB of memory available to the Docker VM, otherwise libduckdb-sys will fail to compile.
+
 ### Via Homebrew
 
     brew tap prql/homebrew-prql-query
@@ -201,14 +204,14 @@ beginning with "duckdb://".
     $ pq --database duckdb://examples/chinook/duckdb/chinook.duckdb \
         'from albums | join artists [artist_id] | group name (aggregate [num_albums = count]) | sort [-num_albums] | take 10'
 
-### Querying Sqlite databases (WIP)
+### Querying Sqlite databases
 
 Sqlite is currently supported through the [sqlite_scanner](https://github.com/duckdblabs/sqlite_scanner)
-DuckDB extension. This appears to work for some queries but not for others
-so this is currently EXPERIMENTAL.
+DuckDB extension. In order to query a SQLite database, a database URI
+beginning with "sqlite://" needs to be supplied.
 
     $ pq --database sqlite://examples/chinook/sqlite/chinook.sqlite \
-        'from albums | select title | take 10'
+        'from albums | take 10'
 
 ### Querying PostgreSQL databases
 
