@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.13 - 2022-11-08
+
+* Fixed chinook.sqlite file.
+
 ## 0.0.12 - 2022-10-24
 
 * Fixed Docker alias command.
