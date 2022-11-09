@@ -16,11 +16,9 @@ use prql_compiler::compile;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "datafusion")] {
-        const DEFAULT_BACKEND : &str = "datafusion";
+        const DEFAULT_BACKEND: Backend = Backend::datafusion;
     } else if #[cfg(feature = "duckdb")] {
-        const DEFAULT_BACKEND : &str = "duckdb";
-    } else {
-        const DEFAULT_BACKEND : &str = "";
+        const DEFAULT_BACKEND: Backend = Backend::duckdb;
     }
 }
 
@@ -46,8 +44,8 @@ struct Cli {
     database: Option<String>,
 
     /// The backend to use to process the query
-    #[clap(short, long, value_parser, env = "PQ_BACKEND")]
-    backend: Option<String>,
+    #[clap(short, long, value_parser, default_value = "auto", env = "PQ_BACKEND")]
+    backend: Backend,
 
     /// Only generate SQL without executing it against files
     #[clap(long, value_parser)]
@@ -75,6 +73,14 @@ struct Cli {
     /// The PRQL query to be processed if given, otherwise read from stdin
     #[clap(value_parser, default_value = "-", env = "PQ_QUERY")]
     query: String,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[allow(non_camel_case_types)]
+pub enum Backend {
+    auto,
+    datafusion,
+    duckdb,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -184,30 +190,34 @@ fn main() -> Result<()> {
     }
     debug!("format = {0:?}", &args.format);
 
-    let mut backend: String = String::from("");
-    let mut database: String = String::from("");
+    // backend
+    debug!("args.backend = {0:?}", &args.backend);
+    let mut backend: Backend = args.backend;
+
+    // database
+    let mut database: String;
 
     debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
-        backend = if args_database.starts_with("duckdb://") {
-            String::from("duckdb")
-        } else {
-            // FIXME: Replace this with connectorx when implemented
-            String::from("duckdb")
-        };
-        database = args_database.to_string();
+        database = args_database;
+        if backend == Backend::auto {
+            if database.starts_with("duckdb://") {
+                backend = Backend::duckdb;
+            } else {
+                // FIXME: Replace this with connectorx when implemented
+                backend = Backend::duckdb;
+            }
+        }
     } else {
-        backend = String::from(DEFAULT_BACKEND);
+        database = String::from("");
+        if backend == Backend::auto {
+            backend = DEFAULT_BACKEND;
+        }
     }
     debug!("database = {database:?}");
-
-    debug!("args.backend = {0:?}", &args.backend);
-    if let Some(args_backend) = args.backend {
-        // an explicitly provided backend overrides the one we inferred
-        backend = args_backend;
-    }
     debug!("backend = {backend:?}");
 
+    // writer
     debug!("args.writer = {0:?}", &args.writer);
 
     if args.no_exec || (database == "" && args.from.len() == 0 && !args.sql) {
@@ -217,7 +227,7 @@ fn main() -> Result<()> {
         let mut found_backend = false;
 
         #[cfg(feature = "datafusion")]
-        if backend == "datafusion" {
+        if backend == Backend::datafusion {
             // Create a tokio runtime to run async datafusion code
             let rt = tokio::runtime::Builder::new_current_thread()
                 .enable_all()
@@ -234,7 +244,7 @@ fn main() -> Result<()> {
             found_backend = true;
         }
         #[cfg(feature = "duckdb")]
-        if backend == "duckdb" {
+        if backend == Backend::duckdb {
             backends::duckdb::query(&query, &sources, &to, &database, &format, &args.writer)?;
             found_backend = true;
         }
