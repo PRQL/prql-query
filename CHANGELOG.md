@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.14 - 2022-11-09
+
+* Changes backend argument to be an enum.
+
 ## 0.0.13 - 2022-11-08
 
 * Fixed chinook.sqlite file.

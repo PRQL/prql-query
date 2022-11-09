@@ -58,7 +58,7 @@ dowloaded from [Releases](https://github.com/prql/prql-query/releases/)
 
 For example on linux you could download and install `pq` with:
 
-    VERSION=v0.0.13 wget https://github.com/prql/prql-query/releases/download/$VERSION/pq-x86_64-unknown-linux-gnu.tar.gz && \
+    VERSION=v0.0.14 wget https://github.com/prql/prql-query/releases/download/$VERSION/pq-x86_64-unknown-linux-gnu.tar.gz && \
         tar xvzf pq-x86_64-unknown-linux-gnu.tar.gz --directory ~/.local/bin && \
         rm pq-x86_64-unknown-linux-gnu.tar.gz
 

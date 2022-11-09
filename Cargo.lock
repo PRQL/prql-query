@@ -2441,7 +2441,7 @@ dependencies = [
 
 [[package]]
 name = "prql-query"
-version = "0.0.13"
+version = "0.0.14"
 dependencies = [
  "anyhow",
  "arrow 23.0.0",
