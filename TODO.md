@@ -29,6 +29,7 @@
 * [x] Publish to homebrew
 * [ ] Add tests
 * [ ] Add pq-builder volume to speed up Docker builds
+* [ ] Polars as a backend
 * [ ] Use an Enum for the backend checks/enumeration
 * [ ] Expose Substrait JSON
 * [ ] Add connectorx support (Postgresql, MySQL)
