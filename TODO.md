@@ -30,6 +30,7 @@
 * [ ] Add tests
 * [ ] Add pq-builder volume to speed up Docker builds
 * [ ] Use an Enum for the backend checks/enumeration
+* [ ] Expose Substrait JSON
 * [ ] Add connectorx support (Postgresql, MySQL)
 * [ ] Enable output formats for connectorx
 * [ ] Add connectorx support (MS SQL, SQLite, BigQuery, ClickHouse)
@@ -38,7 +39,7 @@
 * [ ] Move single partitioned files to single output file
 * [ ] Add abbreviations for keywords
 * [ ] Add s3 support
-* [ ] Add Delta Lake support
 * [ ] Add Iceberg support
+* [ ] Add Delta Lake support
 * [ ] Add avro support
 * [ ] Switch to eyre from anyhow
