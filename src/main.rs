@@ -152,7 +152,7 @@ fn main() -> Result<()> {
     debug!("query = {query:?}");
 
     // args.to
-    let to = args.to.to_string().trim_end_matches('/').to_string();
+    let to = args.to.trim_end_matches('/').to_string();
     debug!("to = {to:?}");
 
     debug!("args.format = {0:?}", &args.format);
@@ -175,9 +175,9 @@ fn main() -> Result<()> {
             format = OutputFormat::table;
         } else {
             format = match to
-                .split(".")
+                .split('.')
                 .last()
-                .ok_or(anyhow!("No extension format found in {to:?}"))?
+                .ok_or_else(|| anyhow!("No extension format found in {to:?}"))?
             {
                 "csv" => OutputFormat::csv,
                 "json" => OutputFormat::json,
@@ -200,13 +200,15 @@ fn main() -> Result<()> {
     debug!("args.database = {0:?}", &args.database);
     if let Some(args_database) = args.database {
         database = args_database;
+
+        #[allow(clippy::if_same_then_else)]
         if backend == Backend::auto {
-            if database.starts_with("duckdb://") {
-                backend = Backend::duckdb;
+            backend = if database.starts_with("duckdb://") {
+                Backend::duckdb
             } else {
                 // FIXME: Replace this with connectorx when implemented
-                backend = Backend::duckdb;
-            }
+                Backend::duckdb
+            };
         }
     } else {
         database = String::from("");
@@ -220,7 +222,7 @@ fn main() -> Result<()> {
     // writer
     debug!("args.writer = {0:?}", &args.writer);
 
-    if args.no_exec || (database == "" && args.from.len() == 0 && !args.sql) {
+    if args.no_exec || (database.is_empty() && args.from.is_empty() && !args.sql) {
         let sql = get_sql_from_query(&query)?;
         println!("{sql}");
     } else {
@@ -264,7 +266,7 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
     if to == "-" {
         dest = Box::new(std::io::stdout());
     } else {
-        dest = Box::new(std::fs::File::create(&to)?);
+        dest = Box::new(std::fs::File::create(to)?);
     }
     Ok(dest)
 }
@@ -284,29 +286,31 @@ fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     // let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
     let mut sources: SourcesType = SourcesType::new();
     for from_str in from.iter() {
-        let mut from_parts: Vec<String> = from_str.split("=").map(|s| s.to_string()).collect();
+        let mut from_parts: Vec<String> = from_str.split('=').map(|s| s.to_string()).collect();
         if from_parts.len() == 1 {
             let filepath = Utf8Path::new(&from_parts[0]);
             let file_ext = filepath
                 .extension()
-                .ok_or(anyhow!("No extension in: {filepath}"))?;
+                .ok_or_else(|| anyhow!("No extension in: {filepath}"))?;
             if supported_file_types.contains(&file_ext) {
                 // Dealing with a file
                 let last_component = filepath
                     .components()
                     .last()
-                    .ok_or(anyhow!("There was no last component of: {filepath}"))?;
+                    .ok_or_else(|| anyhow!("There was no last component of: {filepath}"))?;
                 let filename = last_component
                     .as_str()
-                    .split(".")
+                    .split('.')
                     .next()
-                    .ok_or(anyhow!("No filename found in: {last_component}"))?;
-                let table_name = filename.replace(" ", "_");
+                    .ok_or_else(|| anyhow!("No filename found in: {last_component}"))?;
+                let table_name = filename.replace(' ', "_");
                 from_parts = vec![table_name, from_parts[0].clone()];
             } else {
                 // Dealing with a possible tablename with schema prefix
-                let table_parts: Vec<&str> = from_parts[0].split(" ").collect();
-                let table_name = table_parts.last().ok_or(anyhow!("No last tablepart"))?;
+                let table_parts: Vec<&str> = from_parts[0].split(' ').collect();
+                let table_name = table_parts
+                    .last()
+                    .ok_or_else(|| anyhow!("No last tablepart"))?;
                 from_parts = vec![table_name.to_string(), from_parts[0].clone()];
             }
         }
