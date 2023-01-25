@@ -102,7 +102,7 @@ fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -> Re
     {
         // let mut writer = json::ArrayWriter::new(&mut buf);
         let mut writer = json::LineDelimitedWriter::new(dest);
-        writer.write_batches(&rbs)?;
+        writer.write_batches(rbs)?;
         writer.finish()?;
     }
     Ok(())

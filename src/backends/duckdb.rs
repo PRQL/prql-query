@@ -35,16 +35,16 @@ pub fn query(
             } else if source.ends_with(".parquet") {
                 format!("read_parquet('{source}')")
             } else if database.starts_with("postgres") {
-                let mut parts: Vec<&str> = source.split(".").collect();
+                let mut parts: Vec<&str> = source.split('.').collect();
                 if parts.len() == 1 {
                     parts.insert(0, "public");
                 }
                 let table = parts
                     .pop()
-                    .ok_or(anyhow!("Couldn't extract table name from {source}."))?;
+                    .ok_or_else(|| anyhow!("Couldn't extract table name from {source}."))?;
                 let schema = parts
                     .pop()
-                    .ok_or(anyhow!("Couldn't extract schema name from {source}."))?;
+                    .ok_or_else(|| anyhow!("Couldn't extract schema name from {source}."))?;
                 format!("postgres_scan('{database}', '{schema}', '{table}')")
             } else {
                 format!("'{source}'")
@@ -69,7 +69,7 @@ pub fn query(
     debug!("sql_query = {sql_query}");
 
     // prepare the connection and statement
-    let conn = if database == "" {
+    let conn = if database.is_empty() {
         debug!("Opening in-memory DuckDB database");
         Connection::open_in_memory()?
     } else if database.starts_with("sqlite://") {
@@ -87,16 +87,16 @@ pub fn query(
         let re = Regex::new(r"^(?P<uri>[^?]+)(?P<schema>\?currentSchema=.+)?$")?;
         let caps = re
             .captures(database)
-            .ok_or(anyhow!("Couldn't match regex!"))?;
+            .ok_or_else(|| anyhow!("Couldn't match regex!"))?;
         let uri = caps
             .name("uri")
-            .ok_or(anyhow!("Couldn't extract URI!"))?
+            .ok_or_else(|| anyhow!("Couldn't extract URI!"))?
             .as_str();
         debug!("uri={:?}", uri);
         let schema_param = caps
             .name("schema")
             .map_or("?currentSchema=public", |p| p.as_str());
-        let schema = schema_param.split("=").last().map_or("public", |p| p);
+        let schema = schema_param.split('=').last().map_or("public", |p| p);
         debug!("schema={:?}", schema);
         // Install and load the postgres_scanner extension
         let load_extension = "INSTALL postgres_scanner; LOAD postgres_scanner;";
@@ -161,7 +161,7 @@ fn write_record_batches_to_json(rbs: &[RecordBatch], dest: &mut dyn Write) -> Re
     {
         // let mut writer = json::ArrayWriter::new(&mut buf);
         let mut writer = json::LineDelimitedWriter::new(dest);
-        writer.write_batches(&rbs)?;
+        writer.write_batches(rbs)?;
         writer.finish()?;
     }
     Ok(())
