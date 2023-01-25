@@ -12,7 +12,7 @@ use std::io::prelude::*;
 use std::{fs, io};
 
 use clap::{Parser, ValueEnum};
-use prql_compiler::compile;
+use prql_compiler::{compile, ErrorMessages};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "datafusion")] {
@@ -222,7 +222,7 @@ fn main() -> Result<()> {
 
     if args.no_exec || (database == "" && args.from.len() == 0 && !args.sql) {
         let sql = get_sql_from_query(&query)?;
-        println!("{}", &sql);
+        println!("{sql}");
     } else {
         let mut found_backend = false;
 
@@ -271,7 +271,7 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
 
 fn get_sql_from_query(query: &str) -> Result<String> {
     let sql = if query.starts_with("prql ") {
-        compile(query)?
+        compile(query, None).map_err(|e| anyhow!(e))?
     } else {
         query.to_string()
     };
@@ -283,14 +283,14 @@ fn standardise_sources(from: &FromType) -> Result<SourcesType> {
     let supported_file_types: HashSet<&str> = HashSet::from(SUPPORTED_FILE_TYPES);
     // let mut sources : Vec<(String, String)> = Vec::<(String, String)>::new();
     let mut sources: SourcesType = SourcesType::new();
-    for fromstr in from.iter() {
-        let mut fromparts: Vec<String> = fromstr.split("=").map(|s| s.to_string()).collect();
-        if fromparts.len() == 1 {
-            let filepath = Utf8Path::new(&fromparts[0]);
-            let fileext = filepath
+    for from_str in from.iter() {
+        let mut from_parts: Vec<String> = from_str.split("=").map(|s| s.to_string()).collect();
+        if from_parts.len() == 1 {
+            let filepath = Utf8Path::new(&from_parts[0]);
+            let file_ext = filepath
                 .extension()
                 .ok_or(anyhow!("No extension in: {filepath}"))?;
-            if supported_file_types.contains(&fileext) {
+            if supported_file_types.contains(&file_ext) {
                 // Dealing with a file
                 let last_component = filepath
                     .components()
@@ -301,16 +301,16 @@ fn standardise_sources(from: &FromType) -> Result<SourcesType> {
                     .split(".")
                     .next()
                     .ok_or(anyhow!("No filename found in: {last_component}"))?;
-                let tablename = filename.replace(" ", "_");
-                fromparts = vec![tablename, fromparts[0].clone()];
+                let table_name = filename.replace(" ", "_");
+                from_parts = vec![table_name, from_parts[0].clone()];
             } else {
                 // Dealing with a possible tablename with schema prefix
-                let tableparts: Vec<&str> = fromparts[0].split(" ").collect();
-                let tablename = tableparts.last().ok_or(anyhow!("No last tablepart"))?;
-                fromparts = vec![tablename.to_string(), fromparts[0].clone()];
+                let table_parts: Vec<&str> = from_parts[0].split(" ").collect();
+                let table_name = table_parts.last().ok_or(anyhow!("No last tablepart"))?;
+                from_parts = vec![table_name.to_string(), from_parts[0].clone()];
             }
         }
-        sources.push((fromparts[0].clone(), fromparts[1].clone()));
+        sources.push((from_parts[0].clone(), from_parts[1].clone()));
     }
     debug!("sources={sources:?}");
     Ok(sources)
