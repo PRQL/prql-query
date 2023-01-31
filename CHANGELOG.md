@@ -1,5 +1,9 @@
 # pq Changelog
 
+## 0.0.15 - UNRELEASED
+
+* Adds --version parameter (#29, @eitsupi)
+
 ## 0.0.14 - 2022-11-09
 
 * Changes backend argument to be an enum.
