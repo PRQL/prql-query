@@ -30,6 +30,11 @@ type SourcesType = Vec<(String, String)>;
 
 /// pq: query and transform data with PRQL
 #[derive(Parser, Debug)]
+#[clap(
+    name = env!("CARGO_PKG_NAME"),
+    version = env!("CARGO_PKG_VERSION"),
+    about = env!("CARGO_PKG_DESCRIPTION")
+)]
 struct Cli {
     /// The file(s) to read data FROM if given
     #[clap(short, long, value_parser, env = "PQ_FROM")]
