@@ -152,7 +152,7 @@ fn main() -> Result<()> {
     // args.sql
     if !args.sql && !query.starts_with("prql ") {
         // prepend a PRQL header to signal this is a PRQL query rather than a SQL one
-        query = format!("prql version:'0.4' dialect:ansi\n{query}")
+        query = format!("prql version:'0.4' target:sql.generic\n{query}")
     }
     debug!("query = {query:?}");
 
@@ -276,7 +276,7 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
 
 fn get_sql_from_query(query: &str) -> Result<String> {
     let sql = if query.starts_with("prql ") {
-        compile(query)?
+        compile(query, None).map_err(|e| anyhow!(e))?
     } else {
         query.to_string()
     };

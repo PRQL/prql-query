@@ -66,6 +66,7 @@ pub fn query(
     } else {
         query.to_string()
     };
+    debug!("sql_query = {sql_query}");
 
     // prepare the connection and statement
     let conn = if database == "" {
