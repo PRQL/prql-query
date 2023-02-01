@@ -25,37 +25,12 @@ pub fn query(
     format: &OutputFormat,
     writer: &OutputWriter,
 ) -> Result<()> {
-    let mut query = query.to_string();
-    if query.starts_with("prql ") {
-        // prepend CTEs for the source aliases
-        let mut lines: Vec<String> = query.split("\n").map(|s| s.to_string()).collect();
-        debug!("sources = {sources:?}");
-        for (alias, source) in sources.iter() {
-            debug!("alias = {alias:?}; source = {source:?}");
-            // Needs the _{}_ on the LHS for _{}_.*
-            lines.insert(
-                1,
-                format!("table {alias} = (from __{alias}__=__file_{alias}__)"),
-            );
-        }
-        query = lines.join("\n");
-        debug!("query = {query:?}");
-    }
+    let sql_query = if query.starts_with("prql ") {
+        let mut stmts = parse(query)?;
 
-    // compile the PRQL to SQL
-    let mut sql = get_sql_from_query(&query)?;
-    debug!(
-        "sql = {:?}",
-        sql.split_whitespace().collect::<Vec<&str>>().join(" ")
-    );
-
-    if query.starts_with("prql ") {
-        // replace the table placeholders again
-        for (alias, source) in sources.iter() {
-            debug!("alias = {alias:?}; source = {source:?}");
-            let placeholder = format!("__file_{alias}__");
-            debug!("placeholder = {placeholder:?}");
-            let quoted_source = if source.ends_with(".csv") {
+        // prepend CTEs for each of the sources
+        for (name, source) in sources.iter() {
+            let source_sql = if source.ends_with(".csv") {
                 format!("read_csv_auto('{source}')")
             } else if source.ends_with(".parquet") {
                 format!("read_parquet('{source}')")
@@ -72,13 +47,26 @@ pub fn query(
                     .ok_or(anyhow!("Couldn't extract schema name from {source}."))?;
                 format!("postgres_scan('{database}', '{schema}', '{table}')")
             } else {
-                format!(r#"'{source}'"#)
+                format!("'{source}'")
             };
-            debug!("quoted_source = {quoted_source:?}");
-            sql = sql.replace(&placeholder, &quoted_source);
+
+            let mut relation_decl = parse(&format!(
+                r#"
+                let {name} = s"SELECT * FROM {source_sql}"
+                "#
+            ))?;
+
+            stmts.insert(1, relation_decl.remove(0));
         }
-        debug!("sql = {sql:?}");
-    }
+
+        Ok(stmts)
+            .and_then(prql_compiler::pl_to_rq)
+            .and_then(|rq| prql_compiler::rq_to_sql(rq, None))
+            .map_err(|e| anyhow!(e))?
+    } else {
+        query.to_string()
+    };
+    debug!("sql_query = {sql_query}");
 
     // prepare the connection and statement
     let conn = if database == "" {
@@ -129,13 +117,17 @@ pub fn query(
     conn.execute_batch(load_parquet_extension)?;
 
     // Execute the query
-    let mut stmt = conn.prepare(&sql)?;
+    let mut stmt = conn.prepare(&sql_query)?;
     let rbs = stmt.query_arrow([])?.collect::<Vec<RecordBatch>>();
 
     match writer {
         OutputWriter::arrow => write_results_with_arrow(&rbs, to, format),
         OutputWriter::backend => write_results_with_duckdb(&rbs, to, format),
     }
+}
+
+fn parse(query: &str) -> Result<Vec<prql_compiler::ast::pl::Stmt>> {
+    prql_compiler::prql_to_pl(query).map_err(|e| anyhow!(e))
 }
 
 fn write_results_with_duckdb(rbs: &[RecordBatch], to: &str, format: &OutputFormat) -> Result<()> {

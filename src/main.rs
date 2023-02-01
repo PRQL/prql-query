@@ -143,8 +143,8 @@ fn main() -> Result<()> {
 
     if !args.sql {
         // insert `from` clause in main pipeline if not given
-        if !query.to_lowercase().contains("from") && sources.len() > 0 {
-            query = format!("from {}|{query}", sources.last().unwrap().0);
+        if !query.contains("from") && !sources.is_empty() {
+            query = format!("from `{}` |{query}", sources.last().unwrap().0);
         }
         debug!("query = {query:?}");
     }
@@ -152,7 +152,7 @@ fn main() -> Result<()> {
     // args.sql
     if !args.sql && !query.starts_with("prql ") {
         // prepend a PRQL header to signal this is a PRQL query rather than a SQL one
-        query = format!("prql version:1 dialect:ansi\n{query}")
+        query = format!("prql version:'0.4' target:sql.generic\n{query}")
     }
     debug!("query = {query:?}");
 
@@ -276,7 +276,7 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
 
 fn get_sql_from_query(query: &str) -> Result<String> {
     let sql = if query.starts_with("prql ") {
-        compile(query)?
+        compile(query, None).map_err(|e| anyhow!(e))?
     } else {
         query.to_string()
     };

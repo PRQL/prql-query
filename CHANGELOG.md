@@ -3,6 +3,7 @@
 ## 0.0.15 - UNRELEASED
 
 * Adds --version parameter (#29, @eitsupi)
+* Updates prql-compiler to 0.4.2 (#27, @aljazerzen)
 
 ## 0.0.14 - 2022-11-09
 
