@@ -12,7 +12,7 @@ use std::io::prelude::*;
 use std::{fs, io};
 
 use clap::{Parser, ValueEnum};
-use prql_compiler::compile;
+use prql_compiler::{compile, PRQL_VERSION};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "datafusion")] {
@@ -33,7 +33,8 @@ type SourcesType = Vec<(String, String)>;
 #[clap(
     name = env!("CARGO_PKG_NAME"),
     version = env!("CARGO_PKG_VERSION"),
-    about = env!("CARGO_PKG_DESCRIPTION")
+    about = env!("CARGO_PKG_DESCRIPTION"),
+    long_about = format!("pq: query and transform data with PRQL version {} (https://prql-lang.org)", PRQL_VERSION.to_string())
 )]
 struct Cli {
     /// The file(s) to read data FROM if given
