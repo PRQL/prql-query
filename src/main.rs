@@ -57,14 +57,14 @@ struct Cli {
     no_exec: bool,
 
     /// The format to use for the output
-    #[clap(long, arg_enum, value_parser, env = "PQ_FORMAT")]
+    #[clap(long, value_enum, value_parser, env = "PQ_FORMAT")]
     format: Option<OutputFormat>,
 
     /// The Writer to use for writing the output
     #[clap(
         short,
         long,
-        arg_enum,
+        value_enum,
         value_parser,
         default_value = "arrow",
         env = "PQ_WRITER"
@@ -206,12 +206,7 @@ fn main() -> Result<()> {
     if let Some(args_database) = args.database {
         database = args_database;
         if backend == Backend::auto {
-            if database.starts_with("duckdb://") {
-                backend = Backend::duckdb;
-            } else {
-                // FIXME: Replace this with connectorx when implemented
-                backend = Backend::duckdb;
-            }
+            backend = Backend::duckdb;
         }
     } else {
         database = String::from("");
