@@ -207,7 +207,12 @@ fn main() -> Result<()> {
     if let Some(args_database) = args.database {
         database = args_database;
         if backend == Backend::auto {
-            backend = Backend::duckdb;
+            if database.starts_with("duckdb://") {
+                backend = Backend::duckdb;
+            } else {
+                // FIXME: Replace this with connectorx when implemented
+                backend = Backend::duckdb;
+            }
         }
     } else {
         database = String::from("");
