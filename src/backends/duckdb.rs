@@ -35,7 +35,7 @@ pub fn query(
             } else if source.ends_with(".parquet") {
                 format!("read_parquet('{source}')")
             } else if database.starts_with("postgres") {
-                let mut parts: Vec<&str> = source.split(".").collect();
+                let mut parts: Vec<&str> = source.split('.').collect();
                 if parts.len() == 1 {
                     parts.insert(0, "public");
                 }
