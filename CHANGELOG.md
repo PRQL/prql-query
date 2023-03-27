@@ -4,6 +4,7 @@
 
 * Adds --version parameter (#29, @eitsupi)
 * Updates prql-compiler to 0.4.2 (#27, @aljazerzen)
+* Updates prql-compiler to 0.6.1 (@snth)
 
 ## 0.0.14 - 2022-11-09
 

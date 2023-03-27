@@ -29,7 +29,7 @@ env_logger = "0.9.0"
 log = "0.4.17"
 parquet = { version = "23", optional = true }
 polars = { version = "0.24.2", optional = true, features = ["docs-selection"] }
-prql-compiler = { version = "0.4.2" }
+prql-compiler = { version = "0.6.1" }
 regex = { version = "1.6.0", optional = true }
 tokio = { version = "1.19", features = ["rt-multi-thread", "macros"] }
 url = "2"
