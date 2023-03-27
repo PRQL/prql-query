@@ -12,7 +12,7 @@ use std::io::prelude::*;
 use std::{fs, io};
 
 use clap::{Parser, ValueEnum};
-use prql_compiler::{compile, PRQL_VERSION};
+use prql_compiler::{compile, Options, PRQL_VERSION};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "datafusion")] {
@@ -152,7 +152,8 @@ fn main() -> Result<()> {
     // args.sql
     if !args.sql && !query.starts_with("prql ") {
         // prepend a PRQL header to signal this is a PRQL query rather than a SQL one
-        query = format!("prql version:'0.4' target:sql.generic\n{query}")
+        // FIXME: When the backend is DuckDB, the target should be sql.duckdb
+        query = format!("prql version:'{}' target:sql.generic\n{query}", PRQL_VERSION.to_string())
     }
     debug!("query = {query:?}");
 
@@ -276,7 +277,7 @@ fn get_dest_from_to(to: &str) -> Result<Box<dyn Write>> {
 
 fn get_sql_from_query(query: &str) -> Result<String> {
     let sql = if query.starts_with("prql ") {
-        compile(query, None).map_err(|e| anyhow!(e))?
+        compile(query, &Options::default()).map_err(|e| anyhow!(e))?
     } else {
         query.to_string()
     };

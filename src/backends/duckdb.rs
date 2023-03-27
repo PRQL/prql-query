@@ -61,7 +61,7 @@ pub fn query(
 
         Ok(stmts)
             .and_then(prql_compiler::pl_to_rq)
-            .and_then(|rq| prql_compiler::rq_to_sql(rq, None))
+            .and_then(|rq| prql_compiler::rq_to_sql(rq, &prql_compiler::Options::default()))
             .map_err(|e| anyhow!(e))?
     } else {
         query.to_string()
