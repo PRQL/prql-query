@@ -15,19 +15,19 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.57"
-arrow = { version = "23", optional = true, features = ["default", "ipc_compression", "prettyprint"]}
+arrow = { version = "34", optional = true, features = ["default", "ipc_compression", "prettyprint"]}
 async-trait = "0.1"
 atty = "0.2"
 camino = "1.1.1"
 cfg-if = "1.0.0"
 chrono = "0.4"
 clap = { version = "4.1.4", features = ["derive", "env", "string"] }
-datafusion = { version = "12.0.0", optional = true, features = ["default", "avro"]}
+datafusion = { version = "21.0.0", optional = true, features = ["default", "avro"]}
 dotenvy = "0.15.3"
 duckdb = { version = "0.5.1", features = ["bundled", "modern-full"], optional = true }
 env_logger = "0.9.0"
 log = "0.4.17"
-parquet = { version = "23", optional = true }
+parquet = { version = "34", optional = true }
 polars = { version = "0.24.2", optional = true, features = ["docs-selection"] }
 prql-compiler = { version = "0.6.1" }
 regex = { version = "1.6.0", optional = true }
