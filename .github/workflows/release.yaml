@@ -112,3 +112,20 @@ jobs:
               URL: 'https://github.com/prql/prql-query/archive/${{ github.ref }}.tar.gz'
               }
             })
+
+  build-and-publish-snap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📂 Checkout code
+        uses: actions/checkout@v4
+      - name: 📦 Build Snap
+        id: build
+        uses: snapcore/action-build@v1
+      #- name: 🆙 Publish Snap
+      #  uses: snapcore/action-publish@v1
+      #  env:
+      #    SNAPCRAFT_STORE_CREDENTIALS:
+      #      ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      #  with:
+      #    snap: ${{ steps.build.outputs.snap }}
+      #    release: edge
