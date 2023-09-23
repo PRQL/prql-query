@@ -1,0 +1,30 @@
+name: prql-query
+title: pq
+base: core22
+version: git
+summary: Query and transform data with PRQL
+description: |
+  pq allows you to use PRQL to easily query and transform your data.
+  
+  It is powered by Apache Arrow DataFusion and DuckDB and is written in Rust (so it's "blazingly fast" ™)!
+issues: https://github.com/PRQL/prql-query/issues
+source-code: https://github.com/PRQL/prql-query
+contact: https://twitter.com/prql_lang
+website: https://prql-lang.org/
+license: MIT
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+#icon: icon.svg
+
+parts:
+  prql-query:
+    plugin: rust
+    source: .
+    build-packages: [cargo]
+    rust-path: [crates/prql-query]
+
+apps:
+  prql-query:
+    command: bin/pq
+    plugs:
+      - home
